@@ -1,0 +1,118 @@
+import { Request, Response } from 'express';
+import { Prisma, MilestoneStatus } from '@prisma/client';
+import prisma from '../lib/prisma';
+import { assertProjectMember, assertProjectOwner } from '../lib/projectAccess';
+
+export async function listProjectMilestones(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const projectId = Number(req.params.id);
+    const access = await assertProjectMember(res, userId, projectId);
+    if (!access) return;
+
+    const milestones = await prisma.milestone.findMany({
+      where: { project_id: projectId },
+      orderBy: { due_date: 'asc' },
+    });
+    return res.json({ milestones });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
+export async function createMilestone(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const projectId = Number(req.params.id);
+    const owner = await assertProjectOwner(res, userId, projectId);
+    if (!owner) return;
+
+    const body = req.body as {
+      title: string;
+      description?: string | null;
+      due_date: Date;
+      status?: MilestoneStatus;
+    };
+
+    const milestone = await prisma.milestone.create({
+      data: {
+        title: body.title,
+        description: body.description ?? null,
+        due_date: body.due_date,
+        status: body.status ?? undefined,
+        project_id: projectId,
+      },
+    });
+    return res.status(201).json({ milestone });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
+async function milestoneForOwner(res: Response, userId: number, milestoneId: number) {
+  if (!Number.isFinite(milestoneId) || milestoneId <= 0) {
+    res.status(400).json({ error: 'Invalid milestone id' });
+    return null;
+  }
+  const milestone = await prisma.milestone.findUnique({
+    where: { milestone_id: milestoneId },
+  });
+  if (!milestone) {
+    res.status(404).json({ error: 'Milestone not found' });
+    return null;
+  }
+  const owner = await assertProjectOwner(res, userId, milestone.project_id);
+  if (!owner) return null;
+  return milestone;
+}
+
+export async function updateMilestone(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const milestoneId = Number(req.params.id);
+    const existing = await milestoneForOwner(res, userId, milestoneId);
+    if (!existing) return;
+
+    const body = req.body as Record<string, unknown>;
+    const hasField =
+      body.title !== undefined ||
+      body.description !== undefined ||
+      body.due_date !== undefined ||
+      body.status !== undefined;
+    if (!hasField) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const data: Prisma.MilestoneUpdateInput = {};
+    if (body.title !== undefined) data.title = body.title as string;
+    if (body.description !== undefined) data.description = body.description as string | null;
+    if (body.due_date !== undefined) data.due_date = body.due_date as Date;
+    if (body.status !== undefined) data.status = body.status as MilestoneStatus;
+
+    const milestone = await prisma.milestone.update({
+      where: { milestone_id: milestoneId },
+      data,
+    });
+    return res.json({ milestone });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
+export async function deleteMilestone(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const milestoneId = Number(req.params.id);
+    const existing = await milestoneForOwner(res, userId, milestoneId);
+    if (!existing) return;
+
+    await prisma.milestone.delete({ where: { milestone_id: milestoneId } });
+    return res.status(204).send();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}

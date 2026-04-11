@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  manager
+  member
+}
+
+enum ProjectStatus {
+  planning
+  active
+  on_hold
+  completed
+  cancelled
+}
+
+enum TaskStatus {
+  backlog
+  todo
+  in_progress
+  in_review
+  done
+}
+
+enum Priority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum MilestoneStatus {
+  upcoming
+  in_progress
+  completed
+  missed
+}
+
+model User {
+  user_id       Int      @id @default(autoincrement())
+  first_name    String
+  last_name     String
+  email         String   @unique
+  password_hash String
+  phone         String?
+  role          Role     @default(member)
+  status        String   @default("active")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  created_projects    Project[]        @relation("ProjectCreator")
+  assigned_tasks      Task[]           @relation("TaskAssignee")
+  created_tasks       Task[]           @relation("TaskCreator")
+  project_memberships ProjectMember[]
+  comments            TaskComment[]
+  attachments         TaskAttachment[]
+  time_logs           TimeLog[]
+}
+
+model Project {
+  project_id   Int           @id @default(autoincrement())
+  project_name String
+  description  String?
+  start_date   DateTime
+  end_date     DateTime?
+  budget       Float?
+  status       ProjectStatus @default(planning)
+  created_at   DateTime      @default(now())
+
+  created_by Int
+  creator    User @relation("ProjectCreator", fields: [created_by], references: [user_id], onDelete: Restrict)
+
+  tasks      Task[]
+  milestones Milestone[]
+  members    ProjectMember[]
+}
+
+model ProjectMember {
+  project_member_id Int      @id @default(autoincrement())
+  project_id        Int
+  user_id           Int
+  assigned_role     String   @default("member")
+  joined_date       DateTime @default(now())
+
+  project Project @relation(fields: [project_id], references: [project_id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([project_id, user_id])
+}
+
+model Task {
+  task_id         Int        @id @default(autoincrement())
+  title           String
+  description     String?
+  priority        Priority   @default(medium)
+  status          TaskStatus @default(backlog)
+  start_date      DateTime
+  due_date        DateTime?
+  estimated_hours Float?
+  actual_hours    Float?
+  created_at      DateTime   @default(now())
+
+  project_id Int
+  project    Project @relation(fields: [project_id], references: [project_id], onDelete: Cascade)
+
+  assigned_to Int?
+  assignee    User? @relation("TaskAssignee", fields: [assigned_to], references: [user_id], onDelete: SetNull)
+
+  created_by Int
+  creator    User @relation("TaskCreator", fields: [created_by], references: [user_id], onDelete: Restrict)
+
+  parent_task_id Int?
+  parent_task    Task?  @relation("Subtasks", fields: [parent_task_id], references: [task_id], onDelete: Cascade)
+  subtasks       Task[] @relation("Subtasks")
+
+  comments    TaskComment[]
+  attachments TaskAttachment[]
+  time_logs   TimeLog[]
+}
+
+model Milestone {
+  milestone_id Int             @id @default(autoincrement())
+  title        String
+  description  String?
+  due_date     DateTime
+  status       MilestoneStatus @default(upcoming)
+
+  project_id Int
+  project    Project @relation(fields: [project_id], references: [project_id], onDelete: Cascade)
+}
+
+model TaskComment {
+  comment_id   Int      @id @default(autoincrement())
+  comment_text String
+  created_at   DateTime @default(now())
+  task_id      Int
+  user_id      Int
+
+  task Task @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model TaskAttachment {
+  attachment_id Int      @id @default(autoincrement())
+  file_name     String
+  file_path     String
+  uploaded_at   DateTime @default(now())
+  task_id       Int
+  uploaded_by   Int
+
+  task Task @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+  user User @relation(fields: [uploaded_by], references: [user_id], onDelete: Cascade)
+}
+
+model TimeLog {
+  time_log_id  Int      @id @default(autoincrement())
+  hours_logged Float
+  log_date     DateTime
+  description  String?
+  task_id      Int
+  user_id      Int
+
+  task Task @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
