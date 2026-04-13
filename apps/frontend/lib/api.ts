@@ -18,7 +18,11 @@ api.interceptors.response.use(
         await api.post("/auth/refresh");
         return api(originalRequest);
       } catch {
-        window.location.href = "/login";
+        // Dispatch a custom event so the AuthProvider can handle redirect via
+        // Next.js router. Falls back to window.location in non-browser envs.
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth:unauthenticated"));
+        }
       }
     }
     return Promise.reject(error);

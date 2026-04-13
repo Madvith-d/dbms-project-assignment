@@ -41,6 +41,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
+  // Listen for unauthenticated events dispatched by the Axios interceptor so
+  // we can redirect via the Next.js router instead of window.location.
+  useEffect(() => {
+    const handleUnauthenticated = () => {
+      setUser(null);
+      router.push("/login");
+    };
+    window.addEventListener("auth:unauthenticated", handleUnauthenticated);
+    return () => {
+      window.removeEventListener("auth:unauthenticated", handleUnauthenticated);
+    };
+  }, [router]);
+
   const login = useCallback(
     async (data: LoginInput) => {
       const loggedInUser = await loginUser(data);
