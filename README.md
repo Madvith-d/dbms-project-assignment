@@ -49,7 +49,7 @@ Run from repository root:
 ```bash
 npm run prisma:generate --prefix apps/backend
 npm run prisma:migrate --prefix apps/backend
-npx prisma db seed --schema prisma/schema.prisma
+npm run prisma:seed
 ```
 
 ## 5) Run backend
