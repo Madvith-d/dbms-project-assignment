@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { use, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useUpdateTask } from "@/lib/hooks/useTasks";
@@ -90,10 +90,11 @@ function TaskCard({ task, index, canDrag }: { task: Task; index: number; canDrag
   );
 }
 
-export default function BoardPage({ params }: { params: { id: string } }) {
-  const { data: tasks, isLoading } = useTasks(params.id);
+export default function BoardPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data: tasks, isLoading } = useTasks(id);
   const { user } = useAuth();
-  const updateTask = useUpdateTask(params.id);
+  const updateTask = useUpdateTask(id);
   const queryClient = useQueryClient();
 
   const isManager = user?.role === "manager" || user?.role === "admin";
@@ -115,7 +116,7 @@ export default function BoardPage({ params }: { params: { id: string } }) {
       if (!canDragTask(task)) return;
 
       // Optimistic update
-      queryClient.setQueryData<Task[]>(["tasks", params.id], (old) =>
+      queryClient.setQueryData<Task[]>(["tasks", id], (old) =>
         (old ?? []).map((t) =>
           t.task_id === draggableId ? { ...t, status: newStatus } : t
         )
@@ -126,7 +127,7 @@ export default function BoardPage({ params }: { params: { id: string } }) {
         {
           onError: () => {
             // Roll back
-            queryClient.setQueryData<Task[]>(["tasks", params.id], (old) =>
+            queryClient.setQueryData<Task[]>(["tasks", id], (old) =>
               (old ?? []).map((t) =>
                 t.task_id === draggableId ? { ...t, status: task.status } : t
               )
@@ -135,7 +136,7 @@ export default function BoardPage({ params }: { params: { id: string } }) {
         }
       );
     },
-    [tasks, canDragTask, queryClient, params.id, updateTask]
+    [tasks, canDragTask, queryClient, id, updateTask]
   );
 
   if (isLoading) {

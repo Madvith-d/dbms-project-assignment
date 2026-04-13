@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
+import { use, useState } from "react";import {
   useMilestones,
   useCreateMilestone,
   useUpdateMilestone,
@@ -59,12 +58,13 @@ const EMPTY_FORM: MilestoneFormState = {
   status: "upcoming",
 };
 
-export default function MilestonesPage({ params }: { params: { id: string } }) {
+export default function MilestonesPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { user } = useAuth();
-  const { data: milestones, isLoading } = useMilestones(params.id);
-  const createMilestone = useCreateMilestone(params.id);
-  const updateMilestone = useUpdateMilestone(params.id);
-  const deleteMilestone = useDeleteMilestone(params.id);
+  const { data: milestones, isLoading } = useMilestones(id);
+  const createMilestone = useCreateMilestone(id);
+  const updateMilestone = useUpdateMilestone(id);
+  const deleteMilestone = useDeleteMilestone(id);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Milestone | null>(null);

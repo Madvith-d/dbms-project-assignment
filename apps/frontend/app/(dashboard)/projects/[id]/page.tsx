@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { useProject } from "@/lib/hooks/useProjects";
 import { useMilestones } from "@/lib/hooks/useMilestones";
 import { useTasks } from "@/lib/hooks/useTasks";
@@ -20,11 +21,12 @@ const STATUS_STYLES: Record<string, string> = {
 export default function ProjectDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data: project, isLoading, error } = useProject(params.id);
-  const { data: milestones } = useMilestones(params.id);
-  const { data: tasks } = useTasks(params.id);
+  const { id } = use(params);
+  const { data: project, isLoading, error } = useProject(id);
+  const { data: milestones } = useMilestones(id);
+  const { data: tasks } = useTasks(id);
 
   if (isLoading) {
     return (
@@ -46,10 +48,10 @@ export default function ProjectDetailPage({
   const recentTasks = tasks?.slice(0, 5) ?? [];
 
   const navLinks = [
-    { label: "Board", href: `/projects/${params.id}/board`, icon: Kanban, count: null },
-    { label: "Tasks", href: `/projects/${params.id}/tasks`, icon: ClipboardList, count: tasks?.length ?? null },
-    { label: "Milestones", href: `/projects/${params.id}/milestones`, icon: Milestone, count: milestones?.length ?? null },
-    { label: "Members", href: `/projects/${params.id}/members`, icon: Users, count: memberCount || null },
+    { label: "Board", href: `/projects/${id}/board`, icon: Kanban, count: null },
+    { label: "Tasks", href: `/projects/${id}/tasks`, icon: ClipboardList, count: tasks?.length ?? null },
+    { label: "Milestones", href: `/projects/${id}/milestones`, icon: Milestone, count: milestones?.length ?? null },
+    { label: "Members", href: `/projects/${id}/members`, icon: Users, count: memberCount || null },
   ];
 
   return (
@@ -118,7 +120,7 @@ export default function ProjectDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">Recent Tasks</CardTitle>
-            <Link href={`/projects/${params.id}/tasks`} className="text-xs text-primary hover:underline">
+            <Link href={`/projects/${id}/tasks`} className="text-xs text-primary hover:underline">
               View all
             </Link>
           </CardHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useUsers } from "@/lib/hooks/useUsers";
@@ -39,10 +39,11 @@ function useProjectMembers(projectId: string) {
   });
 }
 
-export default function MembersPage({ params }: { params: { id: string } }) {
+export default function MembersPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: members, isLoading } = useProjectMembers(params.id);
+  const { data: members, isLoading } = useProjectMembers(id);
   const { data: allUsers } = useUsers();
 
   const [open, setOpen] = useState(false);
@@ -54,19 +55,19 @@ export default function MembersPage({ params }: { params: { id: string } }) {
 
   const addMember = useMutation({
     mutationFn: async ({ user_id, role }: { user_id: string; role: string }) => {
-      await api.post(`/projects/${params.id}/members`, { user_id, role });
+      await api.post(`/projects/${id}/members`, { user_id, role });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["members", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["members", id] });
     },
   });
 
   const removeMember = useMutation({
     mutationFn: async (userId: string) => {
-      await api.delete(`/projects/${params.id}/members/${userId}`);
+      await api.delete(`/projects/${id}/members/${userId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["members", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["members", id] });
     },
   });
 

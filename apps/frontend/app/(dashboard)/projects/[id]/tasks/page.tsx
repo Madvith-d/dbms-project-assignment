@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,8 +37,9 @@ const STATUS_STYLES: Record<string, string> = {
   done: "bg-green-100 text-green-800",
 };
 
-export default function TasksPage({ params }: { params: { id: string } }) {
-  const { data: tasks, isLoading } = useTasks(params.id);
+export default function TasksPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data: tasks, isLoading } = useTasks(id);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
 

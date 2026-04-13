@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { use, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTask } from "@/lib/hooks/useTasks";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -472,8 +472,9 @@ function TimeLogsSection({ taskId }: { taskId: string }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function TaskDetailPage({ params }: { params: { id: string } }) {
-  const { data: task, isLoading, error } = useTask(params.id);
+export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data: task, isLoading, error } = useTask(id);
 
   if (isLoading) {
     return (
@@ -546,10 +547,10 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
         </CardContent>
       </Card>
 
-      <SubtasksSection taskId={params.id} task={task} />
-      <CommentsSection taskId={params.id} />
-      <AttachmentsSection taskId={params.id} />
-      <TimeLogsSection taskId={params.id} />
+      <SubtasksSection taskId={id} task={task} />
+      <CommentsSection taskId={id} />
+      <AttachmentsSection taskId={id} />
+      <TimeLogsSection taskId={id} />
     </div>
   );
 }
