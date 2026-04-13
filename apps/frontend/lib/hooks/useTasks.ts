@@ -34,6 +34,25 @@ export function useUpdateTask(projectId?: string) {
       const response = await api.patch<{ task: Task }>(`/tasks/${id}`, data);
       return response.data.task;
     },
+    onSuccess: (updatedTask) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", "detail", updatedTask.task_id],
+      });
+    },
+  });
+}
+
+export function useCreateTask(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Partial<Task>) => {
+      const response = await api.post<{ task: Task }>(
+        `/projects/${projectId}/tasks`,
+        data
+      );
+      return response.data.task;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
     },

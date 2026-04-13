@@ -13,19 +13,27 @@ export interface User {
   updated_at: string;
 }
 
-export type ProjectStatus = "active" | "on_hold" | "completed" | "archived";
+export type ProjectStatus =
+  | "planning"
+  | "active"
+  | "on_hold"
+  | "completed"
+  | "cancelled"
+  | "archived";
 
 export interface Project {
   project_id: string;
-  name: string;
+  project_name: string;
   description?: string;
   status: ProjectStatus;
   start_date?: string;
   end_date?: string;
+  budget?: number;
   created_by: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   members?: ProjectMember[];
+  member_count?: number;
 }
 
 export interface ProjectMember {
@@ -36,8 +44,13 @@ export interface ProjectMember {
   user?: User;
 }
 
-export type TaskStatus = "todo" | "in_progress" | "in_review" | "done";
-export type TaskPriority = "low" | "medium" | "high" | "critical";
+export type TaskStatus =
+  | "backlog"
+  | "todo"
+  | "in_progress"
+  | "in_review"
+  | "done";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export interface Task {
   task_id: string;
@@ -47,14 +60,22 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   assignee_id?: string;
+  parent_task_id?: string;
   created_by: string;
   due_date?: string;
   created_at: string;
   updated_at: string;
   assignee?: User;
+  subtask_count?: number;
+  completed_subtask_count?: number;
+  attachment_count?: number;
 }
 
-export type MilestoneStatus = "pending" | "in_progress" | "completed";
+export type MilestoneStatus =
+  | "upcoming"
+  | "in_progress"
+  | "completed"
+  | "missed";
 
 export interface Milestone {
   milestone_id: string;
@@ -65,6 +86,37 @@ export interface Milestone {
   status: MilestoneStatus;
   created_at: string;
   updated_at: string;
+}
+
+export interface Comment {
+  comment_id: string;
+  task_id: string;
+  user_id: string;
+  comment_text: string;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+}
+
+export interface Attachment {
+  attachment_id: string;
+  task_id: string;
+  file_name: string;
+  file_url: string;
+  uploaded_by: string;
+  created_at: string;
+  uploader?: User;
+}
+
+export interface TimeLog {
+  log_id: string;
+  task_id: string;
+  user_id: string;
+  hours_logged: number;
+  log_date: string;
+  description?: string;
+  created_at: string;
+  user?: User;
 }
 
 export interface LoginInput {
