@@ -29,7 +29,7 @@ const navItems: NavItem[] = [
     label: "Projects",
     href: "/projects",
     icon: FolderKanban,
-    roles: ["manager", "member"],
+    roles: ["admin", "manager", "member"],
   },
   {
     label: "Users",
