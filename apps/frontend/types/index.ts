@@ -54,13 +54,15 @@ export interface Task {
   assignee?: User;
 }
 
+export type MilestoneStatus = "pending" | "in_progress" | "completed";
+
 export interface Milestone {
   milestone_id: string;
   project_id: string;
   title: string;
   description?: string;
   due_date?: string;
-  status: string;
+  status: MilestoneStatus;
   created_at: string;
   updated_at: string;
 }
