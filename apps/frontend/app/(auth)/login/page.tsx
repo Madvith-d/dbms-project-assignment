@@ -24,6 +24,7 @@ const loginSchema = z.object({
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
+const MOCK_AUTH_ENABLED = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -56,6 +57,11 @@ export default function LoginPage() {
           <CardDescription>
             Enter your credentials to access the platform
           </CardDescription>
+          {MOCK_AUTH_ENABLED && (
+            <p className="text-sm text-muted-foreground">
+              Mock auth enabled. Use any email/password to sign in.
+            </p>
+          )}
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
