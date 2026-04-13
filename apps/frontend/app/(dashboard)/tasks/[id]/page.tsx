@@ -300,7 +300,7 @@ function AttachmentsSection({ taskId }: { taskId: string }) {
                 <span className="text-xs text-muted-foreground">
                   {new Date(a.created_at).toLocaleDateString()}
                 </span>
-                <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/attachments/${a.attachment_id}`} target="_blank" rel="noreferrer">
+                <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/attachments/${a.attachment_id}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost" size="icon" className="h-7 w-7">
                     <Download className="h-3.5 w-3.5" />
                   </Button>

@@ -12,7 +12,7 @@ export function useTasks(projectId?: string) {
       const response = await api.get<{ tasks: Task[] }>(url);
       return response.data.tasks;
     },
-    enabled: projectId !== undefined ? !!projectId : true,
+    enabled: projectId === undefined || !!projectId,
   });
 }
 
