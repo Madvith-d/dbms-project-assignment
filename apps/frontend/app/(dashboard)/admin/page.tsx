@@ -25,9 +25,9 @@ import { User, UserRole } from "@/types";
 
 function RoleBadge({ role }: { role: UserRole }) {
   const styles = {
-    admin: "bg-red-100 text-red-800 border-red-200 hover:bg-red-100",
-    manager: "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100",
-    member: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100",
+    admin: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf] hover:bg-[#ff6b6b2b]",
+    manager: "border border-[#77b5ff66] bg-[#77b5ff1f] text-[#b4d6ff] hover:bg-[#77b5ff2b]",
+    member: "border border-white/15 bg-white/10 text-slate-200 hover:bg-white/15",
   };
   return <Badge className={styles[role]}>{role}</Badge>;
 }
@@ -37,8 +37,8 @@ function StatusBadge({ status }: { status: string }) {
     <Badge
       className={
         status === "active"
-          ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100"
-          : "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100"
+          ? "border border-[#9CFF4F66] bg-[#9CFF4F1f] text-[#ccff96] hover:bg-[#9CFF4F2b]"
+          : "border border-[#ffd56a66] bg-[#ffd56a1f] text-[#ffe4a3] hover:bg-[#ffd56a2b]"
       }
     >
       {status}

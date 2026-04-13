@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useState } from "react";
+import signinImage from "@/signin.png";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -25,6 +26,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 const MOCK_AUTH_ENABLED = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
+const SIDE_IMAGE_URL = signinImage.src;
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -50,70 +52,82 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>
-            Enter your credentials to access the platform
-          </CardDescription>
-          {MOCK_AUTH_ENABLED && (
-            <p className="text-sm text-muted-foreground">
-              Mock auth enabled. Use any email/password to sign in.
-            </p>
-          )}
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-xs text-destructive">
-                  {errors.email.message}
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-card shadow-2xl md:grid-cols-2">
+        <div className="flex items-center justify-center bg-[#f8f6ef] p-6 sm:p-10">
+          <Card className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <CardHeader className="px-6 pb-2 pt-6">
+              <CardTitle className="text-slate-900">Sign in</CardTitle>
+              <CardDescription className="text-slate-600">
+                Enter your credentials to access the platform
+              </CardDescription>
+              {MOCK_AUTH_ENABLED && (
+                <p className="text-sm text-slate-500">
+                  Mock auth enabled. Use any email/password to sign in.
                 </p>
               )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive">
-                  {errors.password.message}
+            </CardHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4 px-6">
+                {error && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-slate-700">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p className="text-xs text-red-600">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-slate-700">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    {...register("password")}
+                  />
+                  {errors.password && (
+                    <p className="text-xs text-red-600">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3 px-6 pb-6">
+                <Button type="submit" className="w-full bg-[#1b7f4d] text-white hover:bg-[#16663e]" disabled={isSubmitting}>
+                  {isSubmitting ? "Signing in..." : "Sign in"}
+                </Button>
+                <p className="text-sm text-slate-600">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="font-medium text-slate-900 underline-offset-4 hover:underline"
+                  >
+                    Register
+                  </Link>
                 </p>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign in"}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/register"
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Register
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
+        <div
+          className="relative hidden min-h-[560px] bg-slate-900 md:block"
+          style={{ backgroundImage: `url(${SIDE_IMAGE_URL})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/25 to-black/40" />
+        </div>
+      </div>
     </div>
   );
 }

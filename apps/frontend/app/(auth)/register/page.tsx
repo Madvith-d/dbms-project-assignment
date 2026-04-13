@@ -3,13 +3,13 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import signinImage from "@/signin.png";
 
 const registerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -28,6 +29,7 @@ const registerSchema = z.object({
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+const SIDE_IMAGE_URL = signinImage.src;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -54,102 +56,117 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>
-            Fill in the details below to get started
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_name">First name</Label>
-                <Input
-                  id="first_name"
-                  {...register("first_name")}
-                  placeholder="John"
-                />
-                {errors.first_name && (
-                  <p className="text-xs text-destructive">
-                    {errors.first_name.message}
-                  </p>
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-card shadow-2xl md:grid-cols-2">
+        <div className="flex items-center justify-center bg-[#f8f6ef] p-6 sm:p-10">
+          <Card className="w-full max-w-[460px] rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <CardHeader className="px-6 pb-2 pt-6">
+              <CardTitle className="text-slate-900">Create an account</CardTitle>
+              <CardDescription className="text-slate-600">
+                Fill in the details below to get started
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4 px-6">
+                {error && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
                 )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Last name</Label>
-                <Input
-                  id="last_name"
-                  {...register("last_name")}
-                  placeholder="Doe"
-                />
-                {errors.last_name && (
-                  <p className="text-xs text-destructive">
-                    {errors.last_name.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-xs text-destructive">
-                  {errors.email.message}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name" className="text-slate-700">First name</Label>
+                    <Input
+                      id="first_name"
+                      {...register("first_name")}
+                      placeholder="John"
+                      className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    />
+                    {errors.first_name && (
+                      <p className="text-xs text-red-600">
+                        {errors.first_name.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name" className="text-slate-700">Last name</Label>
+                    <Input
+                      id="last_name"
+                      {...register("last_name")}
+                      placeholder="Doe"
+                      className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    />
+                    {errors.last_name && (
+                      <p className="text-xs text-red-600">
+                        {errors.last_name.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-slate-700">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p className="text-xs text-red-600">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-slate-700">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    {...register("password")}
+                  />
+                  {errors.password && (
+                    <p className="text-xs text-red-600">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-slate-700">Phone (optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1234567890"
+                    className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400"
+                    {...register("phone")}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3 px-6 pb-6">
+                <Button type="submit" className="w-full bg-[#1b7f4d] text-white hover:bg-[#16663e]" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating account..." : "Create account"}
+                </Button>
+                <p className="text-sm text-slate-600">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="font-medium text-slate-900 underline-offset-4 hover:underline"
+                  >
+                    Sign in
+                  </Link>
                 </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone (optional)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+1234567890"
-                {...register("phone")}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create account"}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
+        <div
+          className="relative hidden min-h-[560px] bg-slate-900 md:block"
+          style={{ backgroundImage: `url(${SIDE_IMAGE_URL})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/25 to-black/40" />
+        </div>
+      </div>
     </div>
   );
 }

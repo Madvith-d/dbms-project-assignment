@@ -10,12 +10,12 @@ import Link from "next/link";
 import { ClipboardList, Milestone, Users, Kanban, Calendar, DollarSign } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
-  planning: "bg-purple-100 text-purple-800",
-  active: "bg-green-100 text-green-800",
-  on_hold: "bg-yellow-100 text-yellow-800",
-  completed: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-  archived: "bg-gray-100 text-gray-800",
+  planning: "border border-[#c27dff55] bg-[#c27dff1f] text-[#e3bcff]",
+  active: "border border-[#9CFF4F66] bg-[#9CFF4F1f] text-[#ccff96]",
+  on_hold: "border border-[#ffd56a66] bg-[#ffd56a1f] text-[#ffe4a3]",
+  completed: "border border-[#77b5ff66] bg-[#77b5ff1f] text-[#b4d6ff]",
+  cancelled: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf]",
+  archived: "border border-white/15 bg-white/10 text-slate-200",
 };
 
 export default function ProjectDetailPage({
@@ -63,7 +63,7 @@ export default function ProjectDetailPage({
             <p className="text-muted-foreground mt-1">{project.description}</p>
           )}
         </div>
-        <Badge className={STATUS_STYLES[project.status] ?? "bg-gray-100 text-gray-800"}>
+        <Badge className={STATUS_STYLES[project.status] ?? "border border-white/15 bg-white/10 text-slate-200"}>
           {project.status.replace("_", " ")}
         </Badge>
       </div>

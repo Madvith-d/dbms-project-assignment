@@ -19,10 +19,10 @@ const COLUMNS: { status: TaskStatus; label: string }[] = [
 ];
 
 const PRIORITY_STYLES: Record<string, string> = {
-  urgent: "bg-red-100 text-red-800 hover:bg-red-100",
-  high: "bg-orange-100 text-orange-800 hover:bg-orange-100",
-  medium: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-  low: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+  urgent: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf] hover:bg-[#ff6b6b2b]",
+  high: "border border-[#ffad3366] bg-[#ffad331f] text-[#ffd195] hover:bg-[#ffad332b]",
+  medium: "border border-[#77b5ff66] bg-[#77b5ff1f] text-[#b4d6ff] hover:bg-[#77b5ff2b]",
+  low: "border border-white/15 bg-white/10 text-slate-200 hover:bg-white/15",
 };
 
 function getInitials(task: Task) {
@@ -55,7 +55,7 @@ function TaskCard({ task, index, canDrag }: { task: Task; index: number; canDrag
           </Link>
 
           <div className="mt-2 flex flex-wrap gap-1.5 items-center">
-            <Badge className={`${PRIORITY_STYLES[task.priority] ?? "bg-gray-100 text-gray-800"} text-xs`}>
+            <Badge className={`${PRIORITY_STYLES[task.priority] ?? "border border-white/15 bg-white/10 text-slate-200"} text-xs`}>
               {task.priority}
             </Badge>
           </div>
@@ -63,7 +63,7 @@ function TaskCard({ task, index, canDrag }: { task: Task; index: number; canDrag
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {task.due_date && (
-                <span className={`flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : ""}`}>
+                <span className={`flex items-center gap-1 ${isOverdue ? "font-medium text-[#ff8c8c]" : ""}`}>
                   <Calendar className="h-3 w-3" />
                   {new Date(task.due_date).toLocaleDateString()}
                 </span>

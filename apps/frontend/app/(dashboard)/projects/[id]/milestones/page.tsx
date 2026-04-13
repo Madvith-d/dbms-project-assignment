@@ -30,10 +30,10 @@ import { Milestone as MilestoneIcon, Plus, Pencil, Trash2 } from "lucide-react";
 import { Milestone, MilestoneStatus } from "@/types";
 
 const STATUS_STYLES: Record<MilestoneStatus, string> = {
-  upcoming: "bg-blue-100 text-blue-800",
-  in_progress: "bg-yellow-100 text-yellow-800",
-  completed: "bg-green-100 text-green-800",
-  missed: "bg-red-100 text-red-800",
+  upcoming: "border border-[#77b5ff66] bg-[#77b5ff1f] text-[#b4d6ff]",
+  in_progress: "border border-[#ffd56a66] bg-[#ffd56a1f] text-[#ffe4a3]",
+  completed: "border border-[#9CFF4F66] bg-[#9CFF4F1f] text-[#ccff96]",
+  missed: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf]",
 };
 
 function isOverdue(m: Milestone) {
@@ -204,7 +204,7 @@ export default function MilestonesPage({ params }: { params: Promise<{ id: strin
                           <p
                             className={`text-xs ${
                               overdue
-                                ? "text-red-600 font-medium"
+                                ? "font-medium text-[#ff8c8c]"
                                 : "text-muted-foreground"
                             }`}
                           >

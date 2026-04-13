@@ -20,17 +20,17 @@ import Link from "next/link";
 import { FolderKanban, Plus, Calendar, Users } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
-  planning: "bg-purple-100 text-purple-800 hover:bg-purple-100",
-  active: "bg-green-100 text-green-800 hover:bg-green-100",
-  on_hold: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-  completed: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-  cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
-  archived: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+  planning: "border border-[#c27dff55] bg-[#c27dff1f] text-[#e3bcff] hover:bg-[#c27dff2b]",
+  active: "border border-[#9CFF4F66] bg-[#9CFF4F1f] text-[#ccff96] hover:bg-[#9CFF4F2b]",
+  on_hold: "border border-[#ffd56a66] bg-[#ffd56a1f] text-[#ffe4a3] hover:bg-[#ffd56a2b]",
+  completed: "border border-[#77b5ff66] bg-[#77b5ff1f] text-[#b4d6ff] hover:bg-[#77b5ff2b]",
+  cancelled: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf] hover:bg-[#ff6b6b2b]",
+  archived: "border border-white/15 bg-white/10 text-slate-200 hover:bg-white/15",
 };
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge className={STATUS_STYLES[status] ?? "bg-gray-100 text-gray-800"}>
+    <Badge className={STATUS_STYLES[status] ?? "border border-white/15 bg-white/10 text-slate-200"}>
       {status.replace("_", " ")}
     </Badge>
   );
