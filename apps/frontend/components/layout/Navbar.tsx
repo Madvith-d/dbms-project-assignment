@@ -7,16 +7,16 @@ export function Navbar() {
   const { user } = useAuth();
 
   return (
-    <header className="flex h-16 items-center justify-end border-b bg-card px-6">
+    <header className="mx-3 mt-3 flex h-16 items-center justify-end rounded-2xl border border-white/10 bg-white/[0.03] px-6">
       {user && (
         <div className="flex items-center gap-3">
           <Badge
             className={
               user.role === "admin"
-                ? "bg-red-100 text-red-800 hover:bg-red-100"
+                ? "border border-[#ff6b6b66] bg-[#ff6b6b22] text-[#ff9b9b] hover:bg-[#ff6b6b33]"
                 : user.role === "manager"
-                ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                ? "border border-[#5aa6ff66] bg-[#5aa6ff22] text-[#9fceff] hover:bg-[#5aa6ff33]"
+                : "border border-white/15 bg-white/10 text-slate-200 hover:bg-white/15"
             }
           >
             {user.role}

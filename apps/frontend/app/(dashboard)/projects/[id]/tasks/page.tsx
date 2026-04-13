@@ -23,18 +23,18 @@ import Link from "next/link";
 import { TaskStatus, TaskPriority } from "@/types";
 
 const PRIORITY_STYLES: Record<string, string> = {
-  urgent: "bg-red-100 text-red-800",
-  high: "bg-orange-100 text-orange-800",
-  medium: "bg-blue-100 text-blue-800",
-  low: "bg-gray-100 text-gray-800",
+  urgent: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf]",
+  high: "border border-[#ffad3366] bg-[#ffad331f] text-[#ffd195]",
+  medium: "border border-[#77b5ff66] bg-[#77b5ff1f] text-[#b4d6ff]",
+  low: "border border-white/15 bg-white/10 text-slate-200",
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  backlog: "bg-gray-100 text-gray-700",
-  todo: "bg-slate-100 text-slate-700",
-  in_progress: "bg-yellow-100 text-yellow-800",
-  in_review: "bg-purple-100 text-purple-800",
-  done: "bg-green-100 text-green-800",
+  backlog: "border border-white/15 bg-white/10 text-slate-200",
+  todo: "border border-[#88a3ff55] bg-[#88a3ff1f] text-[#cad7ff]",
+  in_progress: "border border-[#ffd56a66] bg-[#ffd56a1f] text-[#ffe4a3]",
+  in_review: "border border-[#c27dff55] bg-[#c27dff1f] text-[#e3bcff]",
+  done: "border border-[#9CFF4F66] bg-[#9CFF4F1f] text-[#ccff96]",
 };
 
 export default function TasksPage({ params }: { params: Promise<{ id: string }> }) {
@@ -136,7 +136,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                         ? `${task.assignee.first_name} ${task.assignee.last_name}`
                         : "—"}
                     </TableCell>
-                    <TableCell className={isOverdue ? "text-red-600 font-medium" : "text-muted-foreground"}>
+                    <TableCell className={isOverdue ? "font-medium text-[#ff8c8c]" : "text-muted-foreground"}>
                       {task.due_date
                         ? new Date(task.due_date).toLocaleDateString()
                         : "—"}
