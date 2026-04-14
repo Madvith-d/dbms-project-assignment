@@ -130,7 +130,6 @@ export async function deleteLabelById(req: Request, res: Response) {
     if (!existing) return;
 
     await prisma.$transaction(async (tx) => {
-      await tx.taskLabel.deleteMany({ where: { label_id: existing.label_id } });
       await tx.label.delete({ where: { label_id: existing.label_id } });
       await logActivity(
         {

@@ -10,7 +10,7 @@ export interface ActivityLogInput {
   entity_id: number;
   action: ActivityAction;
   summary: string;
-  metadata?: Prisma.JsonValue;
+  metadata?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 }
 
 export async function logActivity(
@@ -26,7 +26,7 @@ export async function logActivity(
       entity_id: input.entity_id,
       action: input.action,
       summary: input.summary,
-      metadata: input.metadata,
+      metadata: input.metadata ?? undefined,
     },
   });
 }

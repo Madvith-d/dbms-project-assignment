@@ -104,9 +104,13 @@ export async function listProjectTasks(req: Request, res: Response) {
     if (priority) where.priority = priority;
     if (assigned_to) where.assigned_to = assigned_to;
     if (q) {
-      where.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ],
+        },
       ];
     }
     if (due_before || due_after) {
@@ -364,13 +368,13 @@ export async function updateTaskById(req: Request, res: Response) {
               status: existing.status,
               assigned_to: existing.assigned_to,
               priority: existing.priority,
-              due_date: existing.due_date,
+              due_date: existing.due_date?.toISOString() ?? null,
             },
             after: {
               status: updated.status,
               assigned_to: updated.assigned_to,
               priority: updated.priority,
-              due_date: updated.due_date,
+              due_date: updated.due_date?.toISOString() ?? null,
             },
           },
         },

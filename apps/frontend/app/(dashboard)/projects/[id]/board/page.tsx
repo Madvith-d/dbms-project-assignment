@@ -100,7 +100,7 @@ function TaskCard({ task, index, canDrag }: { task: Task; index: number; canDrag
               )}
             </div>
             {getInitials(task) && (
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-medium">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-medium">
                 {getInitials(task)}
               </div>
             )}
@@ -128,7 +128,7 @@ function getSortOrderForDestination(
   const after = columnTasks[destinationIndex];
 
   if (!before && !after) return 1;
-  if (!before) return (after?.sort_order ?? 0) - 1;
+  if (!before) return Math.max(1, (after?.sort_order ?? 1) / 2);
   if (!after) return (before.sort_order ?? 0) + 1;
 
   return ((before.sort_order ?? 0) + (after.sort_order ?? 0)) / 2;
@@ -275,7 +275,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
           {COLUMNS.map(({ status, label }) => {
             const columnTasks = getColumnTasks(tasks, status);
             return (
-              <div key={status} className="flex-shrink-0 w-72 space-y-3">
+              <div key={status} className="shrink-0 w-72 space-y-3">
                 <div className="flex items-center gap-2 px-1">
                   <h3 className="text-sm font-semibold">{label}</h3>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
