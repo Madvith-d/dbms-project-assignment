@@ -8,6 +8,7 @@ import {
   Users,
   FolderKanban,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,12 @@ const navItems: NavItem[] = [
     label: "Projects",
     href: "/projects",
     icon: FolderKanban,
+    roles: ["admin", "manager", "member"],
+  },
+  {
+    label: "Profile",
+    href: "/profile",
+    icon: UserCircle,
     roles: ["admin", "manager", "member"],
   },
   {

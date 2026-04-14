@@ -26,6 +26,26 @@ function publicUser(user: {
   };
 }
 
+export async function listUserDirectory(_req: Request, res: Response) {
+  try {
+    const users = await prisma.user.findMany({
+      where: { status: 'active' },
+      select: {
+        user_id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        role: true,
+      },
+      orderBy: { first_name: 'asc' },
+    });
+    return res.json({ users });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
 export async function listUsers(_req: Request, res: Response) {
   try {
     const users = await prisma.user.findMany({

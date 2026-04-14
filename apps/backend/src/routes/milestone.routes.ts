@@ -9,9 +9,9 @@ import { updateMilestone, deleteMilestone } from '../controllers/milestone.contr
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRole(Role.manager, Role.member));
+router.use(requireRole(Role.admin, Role.manager, Role.member));
 
-router.patch('/:id', requireRole(Role.manager), validateBody(updateMilestoneSchema), updateMilestone);
-router.delete('/:id', requireRole(Role.manager), deleteMilestone);
+router.patch('/:id', requireRole(Role.admin, Role.manager), validateBody(updateMilestoneSchema), updateMilestone);
+router.delete('/:id', requireRole(Role.admin, Role.manager), deleteMilestone);
 
 export default router;

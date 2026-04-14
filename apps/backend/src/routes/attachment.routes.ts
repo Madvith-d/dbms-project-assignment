@@ -7,7 +7,7 @@ import { downloadAttachment, deleteAttachment } from '../controllers/attachment.
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRole(Role.manager, Role.member));
+router.use(requireRole(Role.admin, Role.manager, Role.member));
 
 router.get('/:id', downloadAttachment);
 router.delete('/:id', deleteAttachment);

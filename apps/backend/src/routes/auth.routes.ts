@@ -5,6 +5,7 @@ import {
   refresh,
   logout,
   me,
+  updateMe,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
@@ -17,5 +18,6 @@ router.post('/login', validateBody(loginSchema), login);
 router.post('/refresh', refresh);
 router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, me);
+router.patch('/me', authenticate, updateMe);
 
 export default router;

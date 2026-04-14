@@ -7,7 +7,7 @@ import { deleteComment } from '../controllers/comment.controller';
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRole(Role.manager, Role.member));
+router.use(requireRole(Role.admin, Role.manager, Role.member));
 
 router.delete('/:id', deleteComment);
 

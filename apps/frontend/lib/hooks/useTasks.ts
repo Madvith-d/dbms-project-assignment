@@ -43,6 +43,18 @@ export function useUpdateTask(projectId?: string) {
   });
 }
 
+export function useDeleteTask(projectId?: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/tasks/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    },
+  });
+}
+
 export function useCreateTask(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({

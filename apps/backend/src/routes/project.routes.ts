@@ -26,18 +26,18 @@ import { listProjectTimeLogs } from '../controllers/timelog.controller';
 
 const router = Router();
 
-const managerOrMember = [Role.manager, Role.member];
+const managerOrMember = [Role.admin, Role.manager, Role.member];
 
 router.use(authenticate);
 router.use(requireRole(...managerOrMember));
 
 router.get('/', listProjects);
-router.post('/', requireRole(Role.manager), validateBody(createProjectSchema), createProject);
+router.post('/', requireRole(Role.admin, Role.manager), validateBody(createProjectSchema), createProject);
 
 router.get('/:id/tasks', listProjectTasks);
 router.post(
   '/:id/tasks',
-  requireRole(...managerOrMember),
+  requireRole(Role.admin, Role.manager, Role.member),
   validateBody(createTaskSchema),
   createProjectTask
 );
@@ -45,23 +45,23 @@ router.post(
 router.get('/:id/members', listProjectMembers);
 router.post(
   '/:id/members',
-  requireRole(Role.manager),
+  requireRole(Role.admin, Role.manager),
   validateBody(addProjectMemberSchema),
   addProjectMember
 );
-router.delete('/:id/members/:userId', requireRole(Role.manager), removeProjectMember);
+router.delete('/:id/members/:userId', requireRole(Role.admin, Role.manager), removeProjectMember);
 
 router.get('/:id/milestones', listProjectMilestones);
 router.post(
   '/:id/milestones',
-  requireRole(Role.manager),
+  requireRole(Role.admin, Role.manager),
   validateBody(createMilestoneSchema),
   createMilestone
 );
 router.get('/:id/timelogs', listProjectTimeLogs);
 
 router.get('/:id', getProject);
-router.patch('/:id', requireRole(Role.manager), validateBody(updateProjectSchema), updateProject);
-router.delete('/:id', requireRole(Role.manager), deleteProject);
+router.patch('/:id', requireRole(Role.admin, Role.manager), validateBody(updateProjectSchema), updateProject);
+router.delete('/:id', requireRole(Role.admin, Role.manager), deleteProject);
 
 export default router;

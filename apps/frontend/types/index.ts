@@ -37,10 +37,11 @@ export interface Project {
 }
 
 export interface ProjectMember {
+  project_member_id: number;
   project_id: string;
-  user_id: string;
-  role: string;
-  joined_at: string;
+  user_id?: string;
+  assigned_role: string;
+  joined_date: string;
   user?: User;
 }
 
@@ -102,21 +103,28 @@ export interface Attachment {
   attachment_id: string;
   task_id: string;
   file_name: string;
-  file_url: string;
+  uploaded_at: string;
   uploaded_by: string;
-  created_at: string;
   uploader?: User;
 }
 
 export interface TimeLog {
-  log_id: string;
+  time_log_id: string;
   task_id: string;
   user_id: string;
   hours_logged: number;
   log_date: string;
   description?: string;
-  created_at: string;
   user?: User;
+}
+
+export interface DashboardStats {
+  total_projects: number;
+  active_projects: number;
+  total_tasks: number;
+  completed_tasks: number;
+  overdue_tasks: number;
+  completion_rate: number;
 }
 
 export interface LoginInput {

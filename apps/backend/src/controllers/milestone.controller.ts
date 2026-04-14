@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Prisma, MilestoneStatus } from '@prisma/client';
+import { Prisma, MilestoneStatus, Role } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { assertProjectMember, assertProjectOwner } from '../lib/projectAccess';
 
@@ -25,7 +25,8 @@ export async function createMilestone(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const projectId = Number(req.params.id);
-    const owner = await assertProjectOwner(res, userId, projectId);
+    const isAdmin = req.user!.role === Role.admin;
+    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
     if (!owner) return;
 
     const body = req.body as {
@@ -51,7 +52,7 @@ export async function createMilestone(req: Request, res: Response) {
   }
 }
 
-async function milestoneForOwner(res: Response, userId: number, milestoneId: number) {
+async function milestoneForOwner(res: Response, userId: number, milestoneId: number, isAdmin = false) {
   if (!Number.isFinite(milestoneId) || milestoneId <= 0) {
     res.status(400).json({ error: 'Invalid milestone id' });
     return null;
@@ -63,7 +64,7 @@ async function milestoneForOwner(res: Response, userId: number, milestoneId: num
     res.status(404).json({ error: 'Milestone not found' });
     return null;
   }
-  const owner = await assertProjectOwner(res, userId, milestone.project_id);
+  const owner = await assertProjectOwner(res, userId, milestone.project_id, isAdmin);
   if (!owner) return null;
   return milestone;
 }
@@ -72,7 +73,8 @@ export async function updateMilestone(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const milestoneId = Number(req.params.id);
-    const existing = await milestoneForOwner(res, userId, milestoneId);
+    const isAdmin = req.user!.role === Role.admin;
+    const existing = await milestoneForOwner(res, userId, milestoneId, isAdmin);
     if (!existing) return;
 
     const body = req.body as Record<string, unknown>;
@@ -106,7 +108,8 @@ export async function deleteMilestone(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const milestoneId = Number(req.params.id);
-    const existing = await milestoneForOwner(res, userId, milestoneId);
+    const isAdmin = req.user!.role === Role.admin;
+    const existing = await milestoneForOwner(res, userId, milestoneId, isAdmin);
     if (!existing) return;
 
     await prisma.milestone.delete({ where: { milestone_id: milestoneId } });
