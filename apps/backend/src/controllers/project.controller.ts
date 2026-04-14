@@ -86,10 +86,17 @@ export async function getProject(req: Request, res: Response) {
                     email: true,
                   },
                 },
+                labels: {
+                  include: { label: true },
+                },
               },
+              orderBy: [{ status: 'asc' }, { sort_order: 'asc' }, { created_at: 'asc' }],
+            },
+            labels: {
+              include: { label: true },
             },
           },
-          orderBy: { task_id: 'asc' },
+          orderBy: [{ status: 'asc' }, { sort_order: 'asc' }, { created_at: 'asc' }],
         },
         milestones: { orderBy: { due_date: 'asc' } },
       },

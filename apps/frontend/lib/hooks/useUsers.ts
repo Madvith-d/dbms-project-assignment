@@ -14,6 +14,16 @@ export function useUsers() {
   });
 }
 
+export function useUserDirectory() {
+  return useQuery({
+    queryKey: ["users", "directory"],
+    queryFn: async () => {
+      const response = await api.get<{ users: User[] }>("/users/directory");
+      return response.data.users;
+    },
+  });
+}
+
 export function useUpdateUserRole() {
   const queryClient = useQueryClient();
   return useMutation({

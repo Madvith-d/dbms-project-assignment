@@ -12,6 +12,7 @@ import milestoneRoutes from './routes/milestone.routes';
 import commentRoutes from './routes/comment.routes';
 import attachmentRoutes from './routes/attachment.routes';
 import statsRoutes from './routes/stats.routes';
+import labelRoutes from './routes/label.routes';
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/milestones', milestoneRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/attachments', attachmentRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/labels', labelRoutes);
 
 app.use(errorHandler);
 

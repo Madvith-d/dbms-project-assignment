@@ -4,6 +4,7 @@ import prisma from '../lib/prisma';
 import { assertTaskProjectMember } from '../lib/taskProject';
 import { assertProjectMember } from '../lib/projectAccess';
 import { publicUserMini } from '../lib/userPublic';
+import { logActivity } from '../lib/activityLog';
 
 export async function listTaskComments(req: Request, res: Response) {
   try {
@@ -46,17 +47,32 @@ export async function addTaskComment(req: Request, res: Response) {
 
     const { comment_text } = req.body as { comment_text: string };
 
-    const comment = await prisma.taskComment.create({
-      data: {
-        comment_text,
-        task_id: taskId,
-        user_id: userId,
-      },
-      include: {
-        user: {
-          select: { user_id: true, first_name: true, last_name: true, email: true },
+    const comment = await prisma.$transaction(async (tx) => {
+      const created = await tx.taskComment.create({
+        data: {
+          comment_text,
+          task_id: taskId,
+          user_id: userId,
         },
-      },
+        include: {
+          user: {
+            select: { user_id: true, first_name: true, last_name: true, email: true },
+          },
+        },
+      });
+      await logActivity(
+        {
+          project_id: task.project_id,
+          actor_user_id: userId,
+          entity_type: 'COMMENT',
+          entity_id: created.comment_id,
+          action: 'COMMENTED',
+          summary: `Commented on task \"${task.title}\"`,
+          metadata: { task_id: taskId },
+        },
+        tx
+      );
+      return created;
     });
 
     return res.status(201).json({
@@ -100,7 +116,21 @@ export async function deleteComment(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    await prisma.taskComment.delete({ where: { comment_id: commentId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.taskComment.delete({ where: { comment_id: commentId } });
+      await logActivity(
+        {
+          project_id: comment.task.project_id,
+          actor_user_id: userId,
+          entity_type: 'COMMENT',
+          entity_id: commentId,
+          action: 'DELETED',
+          summary: `Deleted a comment on task \"${comment.task.title}\"`,
+          metadata: { task_id: comment.task_id },
+        },
+        tx
+      );
+    });
     return res.status(204).send();
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';

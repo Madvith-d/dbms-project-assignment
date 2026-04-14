@@ -1,7 +1,16 @@
 "use client";
 
-import { use, useState } from "react";
-import { useTasks, useCreateTask, useDeleteTask } from "@/lib/hooks/useTasks";
+import { use, useMemo, useState } from "react";
+import {
+  useTasks,
+  useCreateTask,
+  useDeleteTask,
+  useCreateProjectLabel,
+  useDeleteLabel,
+  useProjectLabels,
+  useUpdateTaskLabels,
+} from "@/lib/hooks/useTasks";
+import { useUserDirectory } from "@/lib/hooks/useUsers";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,8 +41,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
-import { TaskStatus, TaskPriority } from "@/types";
+import { Plus, Trash2, Tags } from "lucide-react";
+import { Task, TaskStatus, TaskPriority } from "@/types";
 
 const PRIORITY_STYLES: Record<string, string> = {
   urgent: "border border-[#ff6b6b66] bg-[#ff6b6b1f] text-[#ffafaf]",
@@ -66,33 +75,118 @@ const EMPTY_FORM: TaskForm = {
   due_date: "",
 };
 
+function LabelsCell({ task, projectId }: { task: Task; projectId: string }) {
+  const { user } = useAuth();
+  const { data: labels } = useProjectLabels(projectId);
+  const updateTaskLabels = useUpdateTaskLabels(projectId);
+  const [open, setOpen] = useState(false);
+
+  const isManager = user?.role === "manager" || user?.role === "admin";
+  const selected = (task.labels ?? []).map((l) => l.label_id);
+
+  async function toggleLabel(labelId: number, checked: boolean) {
+    const next = checked
+      ? Array.from(new Set([...selected, labelId]))
+      : selected.filter((id) => id !== labelId);
+    await updateTaskLabels.mutateAsync({ id: String(task.task_id), label_ids: next });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex flex-wrap gap-1">
+        {(task.labels ?? []).map((label) => (
+          <Badge
+            key={label.label_id}
+            className="text-xs border"
+            style={{ backgroundColor: `${label.color}22`, borderColor: `${label.color}66`, color: label.color }}
+          >
+            {label.name}
+          </Badge>
+        ))}
+      </div>
+      {isManager && (
+        <>
+          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setOpen(true)}>
+            <Tags className="h-3.5 w-3.5" />
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Labels for {task.title}</DialogTitle></DialogHeader>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {(labels ?? []).map((label) => {
+                  const checked = selected.includes(label.label_id);
+                  return (
+                    <label key={label.label_id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => toggleLabel(label.label_id, e.target.checked)}
+                      />
+                      <span
+                        className="inline-block h-3 w-3 rounded-full"
+                        style={{ backgroundColor: label.color }}
+                      />
+                      {label.name}
+                    </label>
+                  );
+                })}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>Done</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function TasksPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const { data: tasks, isLoading } = useTasks(id);
+  const { data: users } = useUserDirectory();
+  const { data: labels } = useProjectLabels(id);
   const createTask = useCreateTask(id);
   const deleteTask = useDeleteTask(id);
+
+  const createLabel = useCreateProjectLabel(id);
+  const deleteLabel = useDeleteLabel(id);
+
+  const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
+  const [labelFilter, setLabelFilter] = useState<string>("all");
+  const [dueAfter, setDueAfter] = useState("");
+  const [dueBefore, setDueBefore] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<TaskForm>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
 
+  const [labelName, setLabelName] = useState("");
+  const [labelColor, setLabelColor] = useState("#6366f1");
+
   const isManager = user?.role === "manager" || user?.role === "admin";
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <p className="text-muted-foreground">Loading tasks...</p>
-      </div>
-    );
-  }
+  const filters = useMemo(() => ({
+    q: q.trim() || undefined,
+    status: statusFilter === "all" ? undefined : (statusFilter as TaskStatus),
+    priority: priorityFilter === "all" ? undefined : (priorityFilter as TaskPriority),
+    assigned_to: assigneeFilter === "all" ? undefined : assigneeFilter,
+    label_id: labelFilter === "all" ? undefined : labelFilter,
+    due_after: dueAfter || undefined,
+    due_before: dueBefore || undefined,
+    page,
+    pageSize,
+  }), [q, statusFilter, priorityFilter, assigneeFilter, labelFilter, dueAfter, dueBefore, page]);
 
-  const filtered = (tasks ?? []).filter((t) => {
-    if (statusFilter !== "all" && t.status !== statusFilter) return false;
-    if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
-    return true;
-  });
+  const { data: taskResult, isLoading } = useTasks(id, filters);
+  const tasks = taskResult?.data ?? [];
+  const meta = taskResult?.meta;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -116,6 +210,22 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     }
   }
 
+  async function handleCreateLabel() {
+    if (!labelName.trim()) return;
+    await createLabel.mutateAsync({ name: labelName.trim(), color: labelColor });
+    setLabelName("");
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <p className="text-muted-foreground">Loading tasks...</p>
+      </div>
+    );
+  }
+
+  const totalPages = meta ? Math.max(1, Math.ceil(meta.total / meta.pageSize)) : 1;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -126,39 +236,93 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="w-44">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {(["backlog", "todo", "in_progress", "in_review", "done"] as TaskStatus[]).map((s) => (
-                <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-44">
-          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All priorities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All priorities</SelectItem>
-              {(["urgent", "high", "medium", "low"] as TaskPriority[]).map((p) => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <Input placeholder="Search title or description" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="All statuses" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {(["backlog", "todo", "in_progress", "in_review", "done"] as TaskStatus[]).map((s) => (
+              <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="All priorities" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All priorities</SelectItem>
+            {(["urgent", "high", "medium", "low"] as TaskPriority[]).map((p) => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={assigneeFilter} onValueChange={(v) => { setAssigneeFilter(v); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Assignee" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All assignees</SelectItem>
+            {(users ?? []).map((u) => (
+              <SelectItem key={u.user_id} value={String(u.user_id)}>{u.first_name} {u.last_name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={labelFilter} onValueChange={(v) => { setLabelFilter(v); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Label" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All labels</SelectItem>
+            {(labels ?? []).map((l) => (
+              <SelectItem key={l.label_id} value={String(l.label_id)}>{l.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input type="date" value={dueAfter} onChange={(e) => { setDueAfter(e.target.value); setPage(1); }} />
+        <Input type="date" value={dueBefore} onChange={(e) => { setDueBefore(e.target.value); setPage(1); }} />
       </div>
+
+      {isManager && (
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Label management</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                value={labelName}
+                onChange={(e) => setLabelName(e.target.value)}
+                placeholder="Label name"
+                className="w-52"
+              />
+              <Input
+                type="color"
+                value={labelColor}
+                onChange={(e) => setLabelColor(e.target.value)}
+                className="w-16 p-1"
+              />
+              <Button size="sm" onClick={handleCreateLabel} disabled={createLabel.isPending || !labelName.trim()}>
+                Add label
+              </Button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(labels ?? []).map((label) => (
+                <div key={label.label_id} className="flex items-center gap-1 rounded border px-2 py-1">
+                  <Badge className="text-xs border" style={{ backgroundColor: `${label.color}22`, borderColor: `${label.color}66`, color: label.color }}>
+                    {label.name}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                    onClick={() => deleteLabel.mutate(label.label_id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Tasks ({filtered.length})</CardTitle>
+          <CardTitle>Tasks ({meta?.total ?? tasks.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -168,12 +332,13 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                 <TableHead>Status</TableHead>
                 <TableHead>Priority</TableHead>
                 <TableHead>Assignee</TableHead>
+                <TableHead>Labels</TableHead>
                 <TableHead>Due Date</TableHead>
                 {isManager && <TableHead className="w-12" />}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((task) => {
+              {tasks.map((task) => {
                 const isOverdue =
                   task.due_date &&
                   new Date(task.due_date) < new Date() &&
@@ -200,6 +365,9 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                         ? `${task.assignee.first_name} ${task.assignee.last_name}`
                         : "—"}
                     </TableCell>
+                    <TableCell>
+                      <LabelsCell task={task} projectId={id} />
+                    </TableCell>
                     <TableCell className={isOverdue ? "font-medium text-[#ff8c8c]" : "text-muted-foreground"}>
                       {task.due_date
                         ? new Date(task.due_date).toLocaleDateString()
@@ -213,7 +381,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                           className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={(e) => {
                             e.preventDefault();
-                            deleteTask.mutate(task.task_id);
+                            deleteTask.mutate(String(task.task_id));
                           }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -223,10 +391,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                   </TableRow>
                 );
               })}
-              {filtered.length === 0 && (
+              {tasks.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={isManager ? 6 : 5}
+                    colSpan={isManager ? 7 : 6}
                     className="py-8 text-center text-muted-foreground"
                   >
                     No tasks found
@@ -235,6 +403,28 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               )}
             </TableBody>
           </Table>
+
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {meta?.page ?? page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

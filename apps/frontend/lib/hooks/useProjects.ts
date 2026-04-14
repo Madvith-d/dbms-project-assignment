@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { Project } from "@/types";
+import { ActivityLog, PaginationMeta, Project } from "@/types";
 
 export function useProjects() {
   return useQuery({
@@ -61,5 +61,19 @@ export function useDeleteProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
+  });
+}
+
+export function useProjectActivity(id: string, page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ["projects", id, "activity", page, pageSize],
+    queryFn: async () => {
+      const response = await api.get<{ data: ActivityLog[]; meta: PaginationMeta }>(
+        `/projects/${id}/activity`,
+        { params: { page, pageSize } }
+      );
+      return response.data;
+    },
+    enabled: !!id,
   });
 }

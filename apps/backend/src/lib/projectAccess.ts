@@ -76,3 +76,17 @@ export async function isUserProjectMember(
   if (!project) return false;
   return isProjectMember(project, userId);
 }
+
+export async function ensureProjectMember(
+  userId: number,
+  projectId: number
+) {
+  if (!Number.isFinite(projectId) || projectId <= 0) {
+    return null;
+  }
+
+  const project = await fetchProjectWithMembership(projectId, userId);
+  if (!project) return null;
+  if (!isProjectMember(project, userId)) return null;
+  return project;
+}

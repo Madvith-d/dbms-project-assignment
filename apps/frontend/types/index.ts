@@ -60,6 +60,8 @@ export interface Task {
   description?: string;
   status: TaskStatus;
   priority: TaskPriority;
+  sort_order?: number;
+  assigned_to?: string | number | null;
   assignee_id?: string;
   parent_task_id?: string;
   created_by: string;
@@ -67,9 +69,18 @@ export interface Task {
   created_at: string;
   updated_at: string;
   assignee?: User;
+  labels?: Label[];
   subtask_count?: number;
   completed_subtask_count?: number;
   attachment_count?: number;
+}
+
+export interface Label {
+  label_id: number;
+  project_id: number;
+  name: string;
+  color: string;
+  created_at: string;
 }
 
 export type MilestoneStatus =
@@ -125,6 +136,34 @@ export interface DashboardStats {
   completed_tasks: number;
   overdue_tasks: number;
   completion_rate: number;
+}
+
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface ActivityLog {
+  activity_id: number;
+  project_id: number;
+  actor_user_id: number;
+  entity_type: "TASK" | "PROJECT" | "MILESTONE" | "COMMENT" | "ATTACHMENT";
+  entity_id: number;
+  action:
+    | "CREATED"
+    | "UPDATED"
+    | "DELETED"
+    | "STATUS_CHANGED"
+    | "ASSIGNED"
+    | "COMMENTED"
+    | "UPLOADED_ATTACHMENT"
+    | "LOGGED_TIME"
+    | "LABELS_UPDATED";
+  summary: string;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  actor?: Pick<User, "user_id" | "first_name" | "last_name" | "email">;
 }
 
 export interface LoginInput {

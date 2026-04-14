@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Prisma, MilestoneStatus, Role } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { assertProjectMember, assertProjectOwner } from '../lib/projectAccess';
+import { logActivity } from '../lib/activityLog';
 
 export async function listProjectMilestones(req: Request, res: Response) {
   try {
@@ -36,14 +37,28 @@ export async function createMilestone(req: Request, res: Response) {
       status?: MilestoneStatus;
     };
 
-    const milestone = await prisma.milestone.create({
-      data: {
-        title: body.title,
-        description: body.description ?? null,
-        due_date: body.due_date,
-        status: body.status ?? undefined,
-        project_id: projectId,
-      },
+    const milestone = await prisma.$transaction(async (tx) => {
+      const created = await tx.milestone.create({
+        data: {
+          title: body.title,
+          description: body.description ?? null,
+          due_date: body.due_date,
+          status: body.status ?? undefined,
+          project_id: projectId,
+        },
+      });
+      await logActivity(
+        {
+          project_id: projectId,
+          actor_user_id: userId,
+          entity_type: 'MILESTONE',
+          entity_id: created.milestone_id,
+          action: 'CREATED',
+          summary: `Created milestone \"${created.title}\"`,
+        },
+        tx
+      );
+      return created;
     });
     return res.status(201).json({ milestone });
   } catch (e) {
@@ -93,9 +108,23 @@ export async function updateMilestone(req: Request, res: Response) {
     if (body.due_date !== undefined) data.due_date = body.due_date as Date;
     if (body.status !== undefined) data.status = body.status as MilestoneStatus;
 
-    const milestone = await prisma.milestone.update({
-      where: { milestone_id: milestoneId },
-      data,
+    const milestone = await prisma.$transaction(async (tx) => {
+      const updated = await tx.milestone.update({
+        where: { milestone_id: milestoneId },
+        data,
+      });
+      await logActivity(
+        {
+          project_id: existing.project_id,
+          actor_user_id: userId,
+          entity_type: 'MILESTONE',
+          entity_id: milestoneId,
+          action: 'UPDATED',
+          summary: `Updated milestone \"${updated.title}\"`,
+        },
+        tx
+      );
+      return updated;
     });
     return res.json({ milestone });
   } catch (e) {
@@ -112,7 +141,20 @@ export async function deleteMilestone(req: Request, res: Response) {
     const existing = await milestoneForOwner(res, userId, milestoneId, isAdmin);
     if (!existing) return;
 
-    await prisma.milestone.delete({ where: { milestone_id: milestoneId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.milestone.delete({ where: { milestone_id: milestoneId } });
+      await logActivity(
+        {
+          project_id: existing.project_id,
+          actor_user_id: userId,
+          entity_type: 'MILESTONE',
+          entity_id: milestoneId,
+          action: 'DELETED',
+          summary: `Deleted milestone \"${existing.title}\"`,
+        },
+        tx
+      );
+    });
     return res.status(204).send();
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';

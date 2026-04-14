@@ -106,15 +106,16 @@ async function main() {
     });
   }
 
-  const taskExists = await prisma.task.findFirst({
+  let task = await prisma.task.findFirst({
     where: { project_id: project.project_id, title: 'Design new homepage' },
   });
-  if (!taskExists) {
-    await prisma.task.create({
+  if (!task) {
+    task = await prisma.task.create({
       data: {
         title: 'Design new homepage',
         priority: Priority.high,
         status: TaskStatus.todo,
+        sort_order: 1,
         start_date: new Date(),
         due_date: new Date(Date.now() + 7 * 86400000),
         project_id: project.project_id,
@@ -123,6 +124,54 @@ async function main() {
       },
     });
   }
+
+  const designLabel = await prisma.label.upsert({
+    where: { project_id_name: { project_id: project.project_id, name: 'design' } },
+    update: { color: '#8b5cf6' },
+    create: {
+      project_id: project.project_id,
+      name: 'design',
+      color: '#8b5cf6',
+    },
+  });
+
+  const frontendLabel = await prisma.label.upsert({
+    where: { project_id_name: { project_id: project.project_id, name: 'frontend' } },
+    update: { color: '#3b82f6' },
+    create: {
+      project_id: project.project_id,
+      name: 'frontend',
+      color: '#3b82f6',
+    },
+  });
+
+  await prisma.taskLabel.upsert({
+    where: {
+      task_id_label_id: {
+        task_id: task.task_id,
+        label_id: designLabel.label_id,
+      },
+    },
+    update: {},
+    create: {
+      task_id: task.task_id,
+      label_id: designLabel.label_id,
+    },
+  });
+
+  await prisma.taskLabel.upsert({
+    where: {
+      task_id_label_id: {
+        task_id: task.task_id,
+        label_id: frontendLabel.label_id,
+      },
+    },
+    update: {},
+    create: {
+      task_id: task.task_id,
+      label_id: frontendLabel.label_id,
+    },
+  });
 
   console.log('Seed complete.');
   console.log('Admin:   admin@pm.local   / Admin@1234');

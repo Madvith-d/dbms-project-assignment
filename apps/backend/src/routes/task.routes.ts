@@ -7,6 +7,8 @@ import {
   updateTaskSchema,
   assignTaskSchema,
   createSubtaskSchema,
+  moveTaskSchema,
+  updateTaskLabelsSchema,
 } from '../schemas/task.schemas';
 import { createCommentSchema } from '../schemas/comment.schemas';
 import { createTimeLogSchema } from '../schemas/timelog.schemas';
@@ -17,6 +19,8 @@ import {
   createSubtask,
   listTaskSubtasks,
   assignTask,
+  moveTask,
+  updateTaskLabels,
 } from '../controllers/task.controller';
 import { listTaskComments, addTaskComment } from '../controllers/comment.controller';
 import {
@@ -51,9 +55,11 @@ router.post('/:id/timelogs', validateBody(createTimeLogSchema), createTaskTimeLo
 
 router.get('/:id', getTaskById);
 router.patch('/:id', validateBody(updateTaskSchema), updateTaskById);
+router.patch('/:id/move', validateBody(moveTaskSchema), moveTask);
 router.delete('/:id', deleteTaskById);
 router.get('/:id/subtasks', listTaskSubtasks);
 router.post('/:id/subtasks', validateBody(createSubtaskSchema), createSubtask);
 router.patch('/:id/assign', requireRole(Role.admin, Role.manager), validateBody(assignTaskSchema), assignTask);
+router.post('/:id/labels', requireRole(Role.admin, Role.manager), validateBody(updateTaskLabelsSchema), updateTaskLabels);
 
 export default router;
