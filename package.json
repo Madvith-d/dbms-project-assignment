@@ -11,6 +11,7 @@
     "prisma": "^6.19.3"
   },
   "dependencies": {
+    "@openai/codex": "^0.120.0",
     "@prisma/client": "^6.19.3"
   }
 }
