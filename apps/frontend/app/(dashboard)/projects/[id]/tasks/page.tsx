@@ -81,7 +81,7 @@ function LabelsCell({ task, projectId }: { task: Task; projectId: string }) {
   const updateTaskLabels = useUpdateTaskLabels(projectId);
   const [open, setOpen] = useState(false);
 
-  const isManager = user?.role === "manager" || user?.role === "admin";
+  const isManager = user?.role === "manager";
   const selected = (task.labels ?? []).map((l) => l.label_id);
 
   async function toggleLabel(labelId: number, checked: boolean) {
@@ -170,7 +170,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [labelName, setLabelName] = useState("");
   const [labelColor, setLabelColor] = useState("#6366f1");
 
-  const isManager = user?.role === "manager" || user?.role === "admin";
+  const isManager = user?.role === "manager";
 
   const filters = useMemo(() => ({
     q: q.trim() || undefined,

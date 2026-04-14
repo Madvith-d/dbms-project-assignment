@@ -159,8 +159,109 @@ export async function listProjectTasks(req: Request, res: Response) {
   }
 }
 
+export async function listMyTasks(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const parsed = listTasksQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Invalid query params' });
+    }
+
+    const {
+      status,
+      priority,
+      q,
+      due_before,
+      due_after,
+      sort,
+      order,
+      page,
+      pageSize,
+      label_id,
+    } = parsed.data;
+
+    const where: Prisma.TaskWhereInput = {
+      assigned_to: userId,
+      project: {
+        OR: [
+          { created_by: userId },
+          { members: { some: { user_id: userId } } },
+        ],
+      },
+    };
+
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (q) {
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+      ];
+    }
+    if (due_before || due_after) {
+      where.due_date = {
+        ...(due_after && { gte: due_after }),
+        ...(due_before && { lte: due_before }),
+      };
+    }
+    if (label_id) {
+      where.labels = { some: { label_id } };
+    }
+
+    const sortOrder = (order ?? 'asc') as Prisma.SortOrder;
+    const orderBy: Prisma.TaskOrderByWithRelationInput[] = sort
+      ? [
+          { [sort]: sortOrder },
+          { status: 'asc' },
+          { sort_order: 'asc' },
+          { created_at: 'asc' },
+        ]
+      : [{ due_date: 'asc' }, { sort_order: 'asc' }, { created_at: 'asc' }];
+
+    const skip = (page - 1) * pageSize;
+
+    const [total, tasks] = await Promise.all([
+      prisma.task.count({ where }),
+      prisma.task.findMany({
+        where,
+        include: {
+          ...taskInclude,
+          project: {
+            select: {
+              project_id: true,
+              project_name: true,
+            },
+          },
+        },
+        orderBy,
+        skip,
+        take: pageSize,
+      }),
+    ]);
+
+    const data = tasks.map((task) => serializeTask(task));
+
+    return res.json({
+      data,
+      tasks: data,
+      meta: { page, pageSize, total },
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
 export async function createProjectTask(req: Request, res: Response) {
   try {
+    if (req.user!.role !== Role.manager) {
+      return res.status(403).json({ error: 'Only managers can create tasks' });
+    }
+
     const userId = req.user!.user_id;
     const projectId = Number(req.params.id);
     const access = await assertProjectMember(res, userId, projectId);

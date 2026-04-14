@@ -3,13 +3,16 @@
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardHeader
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Activity, CheckCircle2, Radar, AlertTriangle } from "lucide-react";
-import { DashboardStats } from "@/types";
+import { Badge } from "@/components/ui/badge";
+import { DashboardStats, Task } from "@/types";
 
 function useDashboardStats() {
   return useQuery({
@@ -21,9 +24,26 @@ function useDashboardStats() {
   });
 }
 
+function useMyAssignedTasks(enabled: boolean) {
+  return useQuery({
+    queryKey: ["tasks", "me", "dashboard"],
+    queryFn: async () => {
+      const res = await api.get<{ data: Task[] }>("/tasks/me", {
+        params: { page: 1, pageSize: 8, order: "asc", sort: "due_date" },
+      });
+      return res.data.data;
+    },
+    enabled,
+  });
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: stats } = useDashboardStats();
+  const {
+    data: myTasks,
+    isLoading: isMyTasksLoading,
+  } = useMyAssignedTasks(user?.role === "member");
 
   const metrics = [
     {
@@ -155,6 +175,42 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {user?.role === "member" && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+            <CardTitle className="text-base text-white">My Assigned Tasks</CardTitle>
+            <Link href="/projects" className="text-xs text-primary hover:underline">
+              Open projects
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isMyTasksLoading ? (
+              <p className="text-sm text-muted-foreground">Loading your tasks...</p>
+            ) : (myTasks?.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">No tasks currently assigned to you.</p>
+            ) : (
+              myTasks!.map((task) => (
+                <Link
+                  key={task.task_id}
+                  href={`/tasks/${task.task_id}`}
+                  className="block rounded-md border border-white/10 px-3 py-2 hover:bg-white/5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-white">{task.title}</p>
+                    <Badge variant="outline" className="text-[10px]">
+                      {task.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {task.project?.project_name ?? "Project"}{task.due_date ? ` • Due ${new Date(task.due_date).toLocaleDateString()}` : ""}
+                  </p>
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

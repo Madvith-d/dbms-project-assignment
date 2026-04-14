@@ -222,9 +222,11 @@ export async function addProjectMember(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const projectId = Number(req.params.id);
-    const isAdmin = req.user!.role === Role.admin;
-    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
-    if (!owner) return;
+    if (req.user!.role !== Role.manager) {
+      return res.status(403).json({ error: 'Only managers can add project members' });
+    }
+    const access = await assertProjectMember(res, userId, projectId);
+    if (!access) return;
 
     const { user_id: newUserId, assigned_role } = req.body as {
       user_id: number;
@@ -292,11 +294,13 @@ export async function removeProjectMember(req: Request, res: Response) {
       return res.status(400).json({ error: 'Invalid user id' });
     }
 
-    const isAdmin = req.user!.role === Role.admin;
-    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
-    if (!owner) return;
+    if (req.user!.role !== Role.manager) {
+      return res.status(403).json({ error: 'Only managers can remove project members' });
+    }
+    const access = await assertProjectMember(res, userId, projectId);
+    if (!access) return;
 
-    if (removeUserId === owner.created_by) {
+    if (removeUserId === access.created_by) {
       return res.status(400).json({ error: 'Cannot remove the project owner from the team' });
     }
 
@@ -307,6 +311,112 @@ export async function removeProjectMember(req: Request, res: Response) {
       return res.status(404).json({ error: 'Member not found on this project' });
     }
     return res.status(204).send();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
+export async function listProjectRoles(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const projectId = Number(req.params.id);
+    const access = await assertProjectMember(res, userId, projectId);
+    if (!access) return;
+
+    const rows = await prisma.projectMember.findMany({
+      where: { project_id: projectId },
+      select: { assigned_role: true },
+      distinct: ['assigned_role'],
+      orderBy: { assigned_role: 'asc' },
+    });
+
+    const roles = Array.from(
+      new Set(
+        rows
+          .map((row) => row.assigned_role.trim())
+          .filter((value) => value.length > 0)
+      )
+    );
+
+    return res.json({ roles });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
+export async function updateProjectMemberRole(req: Request, res: Response) {
+  try {
+    const actorUserId = req.user!.user_id;
+    const projectId = Number(req.params.id);
+    const memberUserId = Number(req.params.userId);
+    if (Number.isNaN(memberUserId)) {
+      return res.status(400).json({ error: 'Invalid user id' });
+    }
+
+    const isManager = req.user!.role === Role.manager;
+    if (!isManager) {
+      return res.status(403).json({ error: 'Only managers can assign project roles' });
+    }
+
+    const access = await assertProjectMember(res, actorUserId, projectId);
+    if (!access) return;
+
+    const assignedRole = (req.body as { assigned_role: string }).assigned_role.trim();
+
+    const member = await prisma.projectMember.findFirst({
+      where: { project_id: projectId, user_id: memberUserId },
+      include: {
+        user: {
+          select: {
+            user_id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            role: true,
+            status: true,
+          },
+        },
+      },
+    });
+    if (!member) {
+      return res.status(404).json({ error: 'Member not found on this project' });
+    }
+
+    const updated = await prisma.projectMember.update({
+      where: { project_member_id: member.project_member_id },
+      data: { assigned_role: assignedRole },
+      include: {
+        user: {
+          select: {
+            user_id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            role: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      member: {
+        project_member_id: updated.project_member_id,
+        project_id: updated.project_id,
+        assigned_role: updated.assigned_role,
+        joined_date: updated.joined_date,
+        user: {
+          user_id: updated.user.user_id,
+          first_name: updated.user.first_name,
+          last_name: updated.user.last_name,
+          email: updated.user.email,
+          role: updated.user.role,
+          status: updated.user.status,
+        },
+      },
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';
     return res.status(500).json({ error: message });
