@@ -79,3 +79,19 @@ If seeding succeeds, log in with:
 - `admin@pm.local` / `Admin@1234`
 - `manager@pm.local` / `Manager@1234`
 - `alice@pm.local` / `Member@1234`
+
+## New project management capabilities
+
+After running migration + seed, the app now includes:
+
+- Persisted Kanban ordering (`sort_order`) with drag/drop move endpoint
+- Server-side task filtering/search/sort/pagination (including label filter)
+- Project activity log feed (`/api/projects/:id/activity`)
+- Project-scoped labels and task label assignment APIs/UI
+
+If your database was initialized before these changes, run:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```

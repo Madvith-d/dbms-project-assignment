@@ -511,6 +511,15 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           <Badge className={PRIORITY_STYLES[task.priority] ?? ""}>
             {task.priority}
           </Badge>
+          {(task.labels ?? []).map((label) => (
+            <Badge
+              key={label.label_id}
+              className="text-xs border"
+              style={{ backgroundColor: `${label.color}22`, borderColor: `${label.color}66`, color: label.color }}
+            >
+              {label.name}
+            </Badge>
+          ))}
         </div>
       </div>
 

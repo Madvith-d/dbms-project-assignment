@@ -6,6 +6,7 @@ import prisma from '../lib/prisma';
 import { assertTaskProjectMember } from '../lib/taskProject';
 import { assertProjectMember } from '../lib/projectAccess';
 import { publicUserMini } from '../lib/userPublic';
+import { logActivity } from '../lib/activityLog';
 
 function uploadDir(): string {
   return process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
@@ -59,18 +60,33 @@ export async function uploadTaskAttachment(req: Request, res: Response) {
       return res.status(400).json({ error: 'File is required (field name: file)' });
     }
 
-    const attachment = await prisma.taskAttachment.create({
-      data: {
-        file_name: file.originalname,
-        file_path: file.filename,
-        task_id: taskId,
-        uploaded_by: userId,
-      },
-      include: {
-        user: {
-          select: { user_id: true, first_name: true, last_name: true, email: true },
+    const attachment = await prisma.$transaction(async (tx) => {
+      const created = await tx.taskAttachment.create({
+        data: {
+          file_name: file.originalname,
+          file_path: file.filename,
+          task_id: taskId,
+          uploaded_by: userId,
         },
-      },
+        include: {
+          user: {
+            select: { user_id: true, first_name: true, last_name: true, email: true },
+          },
+        },
+      });
+      await logActivity(
+        {
+          project_id: task.project_id,
+          actor_user_id: userId,
+          entity_type: 'ATTACHMENT',
+          entity_id: created.attachment_id,
+          action: 'UPLOADED_ATTACHMENT',
+          summary: `Uploaded attachment \"${created.file_name}\"`,
+          metadata: { task_id: taskId },
+        },
+        tx
+      );
+      return created;
     });
 
     return res.status(201).json({
@@ -140,7 +156,21 @@ export async function deleteAttachment(req: Request, res: Response) {
     }
 
     const full = diskPath(attachment.file_path);
-    await prisma.taskAttachment.delete({ where: { attachment_id: attachmentId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.taskAttachment.delete({ where: { attachment_id: attachmentId } });
+      await logActivity(
+        {
+          project_id: attachment.task.project_id,
+          actor_user_id: userId,
+          entity_type: 'ATTACHMENT',
+          entity_id: attachmentId,
+          action: 'DELETED',
+          summary: `Deleted attachment \"${attachment.file_name}\"`,
+          metadata: { task_id: attachment.task_id },
+        },
+        tx
+      );
+    });
     try {
       if (fs.existsSync(full)) fs.unlinkSync(full);
     } catch {

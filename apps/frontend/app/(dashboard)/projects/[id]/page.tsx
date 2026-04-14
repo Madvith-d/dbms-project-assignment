@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { ClipboardList, Milestone, Users, Kanban, Calendar, DollarSign, Pencil, Trash2 } from "lucide-react";
+import { ClipboardList, Milestone, Users, Kanban, Calendar, DollarSign, Pencil, Trash2, History } from "lucide-react";
 import { ProjectStatus } from "@/types";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -58,7 +58,7 @@ export default function ProjectDetailPage({
   const { user } = useAuth();
   const { data: project, isLoading, error } = useProject(id);
   const { data: milestones } = useMilestones(id);
-  const { data: tasks } = useTasks(id);
+  const { data: taskResult } = useTasks(id, { page: 1, pageSize: 100 });
   const updateProject = useUpdateProject(id);
   const deleteProject = useDeleteProject();
 
@@ -132,12 +132,14 @@ export default function ProjectDetailPage({
   }
 
   const memberCount = project.member_count ?? project.members?.length ?? 0;
-  const recentTasks = tasks?.slice(0, 5) ?? [];
+  const tasks = taskResult?.data ?? [];
+  const recentTasks = tasks.slice(0, 5);
 
   const navLinks = [
     { label: "Board", href: `/projects/${id}/board`, icon: Kanban, count: null },
     { label: "Tasks", href: `/projects/${id}/tasks`, icon: ClipboardList, count: tasks?.length ?? null },
     { label: "Milestones", href: `/projects/${id}/milestones`, icon: Milestone, count: milestones?.length ?? null },
+    { label: "Activity", href: `/projects/${id}/activity`, icon: History, count: null },
     { label: "Members", href: `/projects/${id}/members`, icon: Users, count: memberCount || null },
   ];
 

@@ -10,6 +10,7 @@ import {
 } from '../schemas/project.schemas';
 import { createTaskSchema } from '../schemas/task.schemas';
 import { createMilestoneSchema } from '../schemas/milestone.schemas';
+import { createLabelSchema } from '../schemas/label.schemas';
 import {
   listProjects,
   createProject,
@@ -23,6 +24,8 @@ import {
 import { listProjectTasks, createProjectTask } from '../controllers/task.controller';
 import { listProjectMilestones, createMilestone } from '../controllers/milestone.controller';
 import { listProjectTimeLogs } from '../controllers/timelog.controller';
+import { listProjectLabels, createProjectLabel } from '../controllers/label.controller';
+import { listProjectActivity } from '../controllers/activity.controller';
 
 const router = Router();
 
@@ -59,6 +62,9 @@ router.post(
   createMilestone
 );
 router.get('/:id/timelogs', listProjectTimeLogs);
+router.get('/:id/labels', listProjectLabels);
+router.post('/:id/labels', requireRole(Role.admin, Role.manager), validateBody(createLabelSchema), createProjectLabel);
+router.get('/:id/activity', listProjectActivity);
 
 router.get('/:id', getProject);
 router.patch('/:id', requireRole(Role.admin, Role.manager), validateBody(updateProjectSchema), updateProject);
