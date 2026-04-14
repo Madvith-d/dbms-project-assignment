@@ -21,5 +21,9 @@ export const updateProjectSchema = z.object({
 
 export const addProjectMemberSchema = z.object({
   user_id: z.coerce.number().int().positive(),
-  assigned_role: z.string().min(1).optional(),
+  assigned_role: z.string().trim().min(1).max(50).optional(),
+});
+
+export const updateProjectMemberRoleSchema = z.object({
+  assigned_role: z.string().trim().min(1).max(50),
 });

@@ -23,6 +23,8 @@ export interface TasksQueryResult {
   meta: PaginationMeta;
 }
 
+const MAX_PAGE_SIZE = 100;
+
 function normalizeTask(task: Task): Task {
   const assigned = (task as Task & { assigned_to?: string | number | null }).assigned_to;
   return {
@@ -32,18 +34,33 @@ function normalizeTask(task: Task): Task {
   };
 }
 
+function normalizeFilters(filters?: TaskFilters): TaskFilters | undefined {
+  if (!filters) return undefined;
+  return {
+    ...filters,
+    pageSize: filters.pageSize ? Math.min(filters.pageSize, MAX_PAGE_SIZE) : filters.pageSize,
+  };
+}
+
 export function useTasks(projectId?: string, filters?: TaskFilters) {
+  const safeFilters = normalizeFilters(filters);
+
   return useQuery({
-    queryKey: ["tasks", projectId, filters],
+    queryKey: ["tasks", projectId, safeFilters],
     queryFn: async () => {
       if (!projectId) {
-        const response = await api.get<{ tasks: Task[] }>("/tasks");
+        const response = await api.get<{
+          data?: Task[];
+          tasks?: Task[];
+          meta?: PaginationMeta;
+        }>("/tasks/me", { params: safeFilters });
+        const rows = (response.data.data ?? response.data.tasks ?? []).map(normalizeTask);
         return {
-          data: response.data.tasks.map(normalizeTask),
-          meta: {
-            page: 1,
-            pageSize: response.data.tasks.length,
-            total: response.data.tasks.length,
+          data: rows,
+          meta: response.data.meta ?? {
+            page: safeFilters?.page ?? 1,
+            pageSize: safeFilters?.pageSize ?? rows.length,
+            total: rows.length,
           },
         } as TasksQueryResult;
       }
@@ -52,14 +69,14 @@ export function useTasks(projectId?: string, filters?: TaskFilters) {
         data?: Task[];
         tasks?: Task[];
         meta?: PaginationMeta;
-      }>(`/projects/${projectId}/tasks`, { params: filters });
+      }>(`/projects/${projectId}/tasks`, { params: safeFilters });
 
       const rows = (response.data.data ?? response.data.tasks ?? []).map(normalizeTask);
       return {
         data: rows,
         meta: response.data.meta ?? {
-          page: filters?.page ?? 1,
-          pageSize: filters?.pageSize ?? rows.length,
+          page: safeFilters?.page ?? 1,
+          pageSize: safeFilters?.pageSize ?? rows.length,
           total: rows.length,
         },
       } as TasksQueryResult;

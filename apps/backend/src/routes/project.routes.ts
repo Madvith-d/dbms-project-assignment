@@ -7,6 +7,7 @@ import {
   createProjectSchema,
   updateProjectSchema,
   addProjectMemberSchema,
+  updateProjectMemberRoleSchema,
 } from '../schemas/project.schemas';
 import { createTaskSchema } from '../schemas/task.schemas';
 import { createMilestoneSchema } from '../schemas/milestone.schemas';
@@ -20,6 +21,8 @@ import {
   listProjectMembers,
   addProjectMember,
   removeProjectMember,
+  listProjectRoles,
+  updateProjectMemberRole,
 } from '../controllers/project.controller';
 import { listProjectTasks, createProjectTask } from '../controllers/task.controller';
 import { listProjectMilestones, createMilestone } from '../controllers/milestone.controller';
@@ -40,7 +43,7 @@ router.post('/', requireRole(Role.admin, Role.manager), validateBody(createProje
 router.get('/:id/tasks', listProjectTasks);
 router.post(
   '/:id/tasks',
-  requireRole(Role.admin, Role.manager, Role.member),
+  requireRole(Role.manager),
   validateBody(createTaskSchema),
   createProjectTask
 );
@@ -48,11 +51,18 @@ router.post(
 router.get('/:id/members', listProjectMembers);
 router.post(
   '/:id/members',
-  requireRole(Role.admin, Role.manager),
+  requireRole(Role.manager),
   validateBody(addProjectMemberSchema),
   addProjectMember
 );
-router.delete('/:id/members/:userId', requireRole(Role.admin, Role.manager), removeProjectMember);
+router.patch(
+  '/:id/members/:userId/role',
+  requireRole(Role.manager),
+  validateBody(updateProjectMemberRoleSchema),
+  updateProjectMemberRole
+);
+router.delete('/:id/members/:userId', requireRole(Role.manager), removeProjectMember);
+router.get('/:id/roles', listProjectRoles);
 
 router.get('/:id/milestones', listProjectMilestones);
 router.post(

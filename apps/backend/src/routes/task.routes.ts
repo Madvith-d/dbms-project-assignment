@@ -13,6 +13,7 @@ import {
 import { createCommentSchema } from '../schemas/comment.schemas';
 import { createTimeLogSchema } from '../schemas/timelog.schemas';
 import {
+  listMyTasks,
   getTaskById,
   updateTaskById,
   deleteTaskById,
@@ -35,6 +36,7 @@ const router = Router();
 router.use(authenticate);
 router.use(requireRole(Role.admin, Role.manager, Role.member));
 
+router.get('/me', listMyTasks);
 router.get('/:id/comments', listTaskComments);
 router.post('/:id/comments', validateBody(createCommentSchema), addTaskComment);
 

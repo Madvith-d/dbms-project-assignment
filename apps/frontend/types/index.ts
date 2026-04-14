@@ -73,6 +73,10 @@ export interface Task {
   subtask_count?: number;
   completed_subtask_count?: number;
   attachment_count?: number;
+  project?: {
+    project_id: number;
+    project_name: string;
+  };
 }
 
 export interface Label {

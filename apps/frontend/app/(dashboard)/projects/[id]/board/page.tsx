@@ -152,12 +152,12 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
       assigned_to: assignedTo === "all" ? undefined : assignedTo,
       label_id: labelId === "all" ? undefined : labelId,
       page: 1,
-      pageSize: 500,
+      pageSize: 100,
     }),
     [assignedTo, labelId, priority, q]
   );
 
-  const { data: taskResult, isLoading } = useTasks(id, filters);
+  const { data: taskResult, isLoading, isError } = useTasks(id, filters);
   const tasks = taskResult?.data ?? [];
 
   const moveTask = useMoveTask(id);
@@ -222,6 +222,14 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
     return (
       <div className="flex items-center justify-center py-8">
         <p className="text-muted-foreground">Loading board...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive">Failed to load tasks for this board.</p>
       </div>
     );
   }
