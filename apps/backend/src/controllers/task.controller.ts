@@ -81,7 +81,7 @@ export async function createProjectTask(req: Request, res: Response) {
       description?: string | null;
       priority?: import('@prisma/client').Priority;
       status?: import('@prisma/client').TaskStatus;
-      start_date: Date;
+      start_date?: Date;
       due_date?: Date | null;
       estimated_hours?: number | null;
       actual_hours?: number | null;
@@ -111,7 +111,7 @@ export async function createProjectTask(req: Request, res: Response) {
         description: body.description ?? null,
         priority: body.priority ?? undefined,
         status: body.status ?? undefined,
-        start_date: body.start_date,
+        start_date: body.start_date ?? new Date(),
         due_date: body.due_date ?? null,
         estimated_hours: body.estimated_hours ?? null,
         actual_hours: body.actual_hours ?? null,
@@ -184,13 +184,13 @@ export async function updateTaskById(req: Request, res: Response) {
     if (!access) return;
 
     const body = req.body as Record<string, unknown>;
-    const isManager = req.user!.role === Role.manager;
+    const isManagerOrAdmin = req.user!.role === Role.manager || req.user!.role === Role.admin;
 
-    if (body.assigned_to !== undefined && !isManager) {
+    if (body.assigned_to !== undefined && !isManagerOrAdmin) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    if (!isManager) {
+    if (!isManagerOrAdmin) {
       if (existing.assigned_to == null || existing.assigned_to !== userId) {
         return res.status(403).json({ error: 'Forbidden' });
       }
@@ -242,7 +242,7 @@ export async function updateTaskById(req: Request, res: Response) {
 
 export async function deleteTaskById(req: Request, res: Response) {
   try {
-    if (req.user!.role !== Role.manager) {
+    if (req.user!.role !== Role.manager && req.user!.role !== Role.admin) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -268,6 +268,35 @@ export async function deleteTaskById(req: Request, res: Response) {
   }
 }
 
+export async function listTaskSubtasks(req: Request, res: Response) {
+  try {
+    const userId = req.user!.user_id;
+    const parentTaskId = Number(req.params.id);
+    if (Number.isNaN(parentTaskId)) {
+      return res.status(400).json({ error: 'Invalid task id' });
+    }
+
+    const parent = await prisma.task.findUnique({ where: { task_id: parentTaskId } });
+    if (!parent) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const access = await assertProjectMember(res, userId, parent.project_id);
+    if (!access) return;
+
+    const subtasks = await prisma.task.findMany({
+      where: { parent_task_id: parentTaskId },
+      include: { assignee: { select: assigneeSelect } },
+      orderBy: { task_id: 'asc' },
+    });
+    return res.json({ tasks: subtasks });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
+
 export async function createSubtask(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
@@ -292,7 +321,7 @@ export async function createSubtask(req: Request, res: Response) {
       description?: string | null;
       priority?: import('@prisma/client').Priority;
       status?: import('@prisma/client').TaskStatus;
-      start_date: Date;
+      start_date?: Date;
       due_date?: Date | null;
       estimated_hours?: number | null;
     };
@@ -303,7 +332,7 @@ export async function createSubtask(req: Request, res: Response) {
         description: body.description ?? null,
         priority: body.priority ?? undefined,
         status: body.status ?? undefined,
-        start_date: body.start_date,
+        start_date: body.start_date ?? new Date(),
         due_date: body.due_date ?? null,
         estimated_hours: body.estimated_hours ?? null,
         project_id: parent.project_id,
@@ -322,7 +351,7 @@ export async function createSubtask(req: Request, res: Response) {
 
 export async function assignTask(req: Request, res: Response) {
   try {
-    if (req.user!.role !== Role.manager) {
+    if (req.user!.role !== Role.manager && req.user!.role !== Role.admin) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

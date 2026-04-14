@@ -1,15 +1,52 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 import {
   Card,
   CardContent,
   CardHeader
 } from "@/components/ui/card";
-import { Activity, CheckCircle2, Radar, Sparkles } from "lucide-react";
+import { Activity, CheckCircle2, Radar, AlertTriangle } from "lucide-react";
+import { DashboardStats } from "@/types";
+
+function useDashboardStats() {
+  return useQuery({
+    queryKey: ["stats"],
+    queryFn: async () => {
+      const res = await api.get<{ stats: DashboardStats }>("/stats");
+      return res.data.stats;
+    },
+  });
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { data: stats } = useDashboardStats();
+
+  const metrics = [
+    {
+      label: "Active Projects",
+      value: stats ? String(stats.active_projects) : "—",
+      icon: Radar,
+    },
+    {
+      label: "Tasks Done",
+      value: stats ? String(stats.completed_tasks) : "—",
+      icon: CheckCircle2,
+    },
+    {
+      label: "Completion Rate",
+      value: stats ? `${stats.completion_rate}%` : "—",
+      icon: Activity,
+    },
+    {
+      label: "Overdue Tasks",
+      value: stats ? String(stats.overdue_tasks) : "—",
+      icon: AlertTriangle,
+    },
+  ];
 
   return (
     <div className="space-y-6 [animation:floatIn_420ms_ease-out]">
@@ -24,12 +61,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Efficiency", value: "82%", icon: Activity },
-          { label: "Projects", value: "12", icon: Radar },
-          { label: "Tasks Done", value: "148", icon: CheckCircle2 },
-          { label: "Performance", value: "A+", icon: Sparkles },
-        ].map((metric, idx) => (
+        {metrics.map((metric, idx) => (
           <Card key={metric.label} className={`[animation:floatIn_520ms_ease-out]`} style={{ animationDelay: `${idx * 80}ms` }}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
@@ -44,26 +76,58 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-3 text-sm font-semibold text-white">Projects Timeline</CardHeader>
+          <CardHeader className="pb-3 text-sm font-semibold text-white">Project Summary</CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { day: "30.09", width: "42%", color: "bg-[#a2ff56]", value: "16" },
-              { day: "29.09", width: "74%", color: "bg-[#ffad33]", value: "29" },
-              { day: "28.09", width: "56%", color: "bg-[#f5f5f5]", value: "21" },
-              { day: "27.09", width: "36%", color: "bg-[#77b5ff]", value: "10" },
-            ].map((item) => (
-              <div key={item.day} className="grid grid-cols-[48px_1fr] items-center gap-3">
-                <span className="text-xs text-muted-foreground">{item.day}</span>
-                <div className="h-8 rounded-full bg-white/5 p-1">
-                  <div
-                    className={`h-full rounded-full ${item.color} px-3 text-right text-xs font-semibold leading-6 text-black transition-all duration-500`}
-                    style={{ width: item.width }}
-                  >
-                    {item.value}
+            {stats ? (
+              <>
+                <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Total Projects</span>
+                  <div className="h-8 rounded-full bg-white/5 p-1">
+                    <div
+                      className="h-full rounded-full bg-[#77b5ff] px-3 text-right text-xs font-semibold leading-6 text-black transition-all duration-500"
+                      style={{ width: `${Math.min((stats.total_projects / Math.max(stats.total_projects, 1)) * 100, 100)}%` }}
+                    >
+                      {stats.total_projects}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+                <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Active</span>
+                  <div className="h-8 rounded-full bg-white/5 p-1">
+                    <div
+                      className="h-full rounded-full bg-[#a2ff56] px-3 text-right text-xs font-semibold leading-6 text-black transition-all duration-500"
+                      style={{ width: `${Math.min((stats.active_projects / Math.max(stats.total_projects, 1)) * 100, 100)}%` }}
+                    >
+                      {stats.active_projects}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Total Tasks</span>
+                  <div className="h-8 rounded-full bg-white/5 p-1">
+                    <div
+                      className="h-full rounded-full bg-[#f5f5f5] px-3 text-right text-xs font-semibold leading-6 text-black transition-all duration-500"
+                      style={{ width: `${Math.min((stats.total_tasks / Math.max(stats.total_tasks, 1)) * 100, 100)}%` }}
+                    >
+                      {stats.total_tasks}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Completed</span>
+                  <div className="h-8 rounded-full bg-white/5 p-1">
+                    <div
+                      className="h-full rounded-full bg-[#ffad33] px-3 text-right text-xs font-semibold leading-6 text-black transition-all duration-500"
+                      style={{ width: `${Math.min((stats.completed_tasks / Math.max(stats.total_tasks, 1)) * 100, 100)}%` }}
+                    >
+                      {stats.completed_tasks}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading stats...</p>
+            )}
           </CardContent>
         </Card>
 

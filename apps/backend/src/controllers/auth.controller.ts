@@ -142,6 +142,63 @@ export async function logout(_req: Request, res: Response) {
   return res.json({ ok: true });
 }
 
+export async function updateMe(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const body = req.body as {
+      first_name?: string;
+      last_name?: string;
+      phone?: string | null;
+      current_password?: string;
+      new_password?: string;
+    };
+
+    const existing = await prisma.user.findUnique({
+      where: { user_id: req.user.user_id },
+    });
+    if (!existing) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const data: Record<string, unknown> = {};
+
+    if (body.first_name !== undefined) data.first_name = body.first_name;
+    if (body.last_name !== undefined) data.last_name = body.last_name;
+    if (body.phone !== undefined) data.phone = body.phone ?? null;
+
+    if (body.new_password) {
+      if (!body.current_password) {
+        return res.status(400).json({ error: 'Current password is required to set a new password' });
+      }
+      const ok = await bcrypt.compare(body.current_password, existing.password_hash);
+      if (!ok) {
+        return res.status(400).json({ error: 'Current password is incorrect' });
+      }
+      if (body.new_password.length < 8) {
+        return res.status(400).json({ error: 'New password must be at least 8 characters' });
+      }
+      data.password_hash = await bcrypt.hash(body.new_password, 12);
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const user = await prisma.user.update({
+      where: { user_id: req.user.user_id },
+      data,
+    });
+
+    return res.json({ user: publicUser(user) });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return res.status(500).json({ error: message });
+  }
+}
+
 export async function me(req: Request, res: Response) {
   try {
     if (!req.user) {

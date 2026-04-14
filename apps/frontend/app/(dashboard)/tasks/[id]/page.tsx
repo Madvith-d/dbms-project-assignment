@@ -298,7 +298,7 @@ function AttachmentsSection({ taskId }: { taskId: string }) {
               <span className="text-sm truncate max-w-[200px]">{a.file_name}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">
-                  {new Date(a.created_at).toLocaleDateString()}
+                  {new Date(a.uploaded_at).toLocaleDateString()}
                 </span>
                 <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/attachments/${a.attachment_id}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -397,7 +397,7 @@ function TimeLogsSection({ taskId }: { taskId: string }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {timeLogs?.map((l) => (
-          <div key={l.log_id} className="flex items-start justify-between rounded-md border px-3 py-2">
+          <div key={l.time_log_id} className="flex items-start justify-between rounded-md border px-3 py-2">
             <div>
               <p className="text-sm font-medium">{l.hours_logged}h</p>
               {l.description && (

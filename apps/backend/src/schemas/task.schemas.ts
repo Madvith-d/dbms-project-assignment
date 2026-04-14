@@ -6,7 +6,7 @@ export const createTaskSchema = z.object({
   description: z.string().optional().nullable(),
   priority: z.nativeEnum(Priority).optional(),
   status: z.nativeEnum(TaskStatus).optional(),
-  start_date: z.coerce.date(),
+  start_date: z.coerce.date().optional(),
   due_date: z.coerce.date().optional().nullable(),
   estimated_hours: z.coerce.number().nonnegative().optional().nullable(),
   actual_hours: z.coerce.number().nonnegative().optional().nullable(),
@@ -35,7 +35,7 @@ export const createSubtaskSchema = z.object({
   description: z.string().optional().nullable(),
   priority: z.nativeEnum(Priority).optional(),
   status: z.nativeEnum(TaskStatus).optional(),
-  start_date: z.coerce.date(),
+  start_date: z.coerce.date().optional(),
   due_date: z.coerce.date().optional().nullable(),
   estimated_hours: z.coerce.number().nonnegative().optional().nullable(),
 });

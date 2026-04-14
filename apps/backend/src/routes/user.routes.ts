@@ -5,6 +5,7 @@ import {
   getUser,
   updateUserRole,
   updateUserStatus,
+  listUserDirectory,
 } from '../controllers/user.controller';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
@@ -12,6 +13,9 @@ import { validateBody } from '../middleware/validate';
 import { updateRoleSchema, updateStatusSchema } from '../schemas/user.schemas';
 
 const router = Router();
+
+// Directory is accessible to all authenticated users (for adding project members)
+router.get('/directory', authenticate, listUserDirectory);
 
 router.use(authenticate, requireRole(Role.admin));
 

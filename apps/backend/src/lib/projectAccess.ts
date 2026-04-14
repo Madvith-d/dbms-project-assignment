@@ -46,7 +46,8 @@ export async function assertProjectMember(
 export async function assertProjectOwner(
   res: Response,
   userId: number,
-  projectId: number
+  projectId: number,
+  isAdmin = false
 ) {
   if (!Number.isFinite(projectId) || projectId <= 0) {
     res.status(400).json({ error: 'Invalid project id' });
@@ -60,7 +61,7 @@ export async function assertProjectOwner(
     res.status(404).json({ error: 'Project not found' });
     return null;
   }
-  if (project.created_by !== userId) {
+  if (!isAdmin && project.created_by !== userId) {
     res.status(403).json({ error: 'Forbidden' });
     return null;
   }

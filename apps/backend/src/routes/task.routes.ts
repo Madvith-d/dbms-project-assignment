@@ -15,6 +15,7 @@ import {
   updateTaskById,
   deleteTaskById,
   createSubtask,
+  listTaskSubtasks,
   assignTask,
 } from '../controllers/task.controller';
 import { listTaskComments, addTaskComment } from '../controllers/comment.controller';
@@ -28,7 +29,7 @@ import { attachmentUpload } from '../middleware/upload';
 const router = Router();
 
 router.use(authenticate);
-router.use(requireRole(Role.manager, Role.member));
+router.use(requireRole(Role.admin, Role.manager, Role.member));
 
 router.get('/:id/comments', listTaskComments);
 router.post('/:id/comments', validateBody(createCommentSchema), addTaskComment);
@@ -51,7 +52,8 @@ router.post('/:id/timelogs', validateBody(createTimeLogSchema), createTaskTimeLo
 router.get('/:id', getTaskById);
 router.patch('/:id', validateBody(updateTaskSchema), updateTaskById);
 router.delete('/:id', deleteTaskById);
+router.get('/:id/subtasks', listTaskSubtasks);
 router.post('/:id/subtasks', validateBody(createSubtaskSchema), createSubtask);
-router.patch('/:id/assign', requireRole(Role.manager), validateBody(assignTaskSchema), assignTask);
+router.patch('/:id/assign', requireRole(Role.admin, Role.manager), validateBody(assignTaskSchema), assignTask);
 
 export default router;

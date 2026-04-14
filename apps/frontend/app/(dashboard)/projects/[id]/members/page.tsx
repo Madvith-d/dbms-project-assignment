@@ -3,7 +3,6 @@
 import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { useUsers } from "@/lib/hooks/useUsers";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +25,14 @@ import {
 import { Users, Plus, Trash2 } from "lucide-react";
 import { ProjectMember } from "@/types";
 
+interface DirectoryUser {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+}
+
 function useProjectMembers(projectId: string) {
   return useQuery({
     queryKey: ["members", projectId],
@@ -39,12 +46,22 @@ function useProjectMembers(projectId: string) {
   });
 }
 
+function useUserDirectory() {
+  return useQuery({
+    queryKey: ["users", "directory"],
+    queryFn: async () => {
+      const res = await api.get<{ users: DirectoryUser[] }>("/users/directory");
+      return res.data.users;
+    },
+  });
+}
+
 export default function MembersPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: members, isLoading } = useProjectMembers(id);
-  const { data: allUsers } = useUsers();
+  const { data: directoryUsers } = useUserDirectory();
 
   const [open, setOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -54,8 +71,14 @@ export default function MembersPage({ params }: { params: Promise<{ id: string }
   const isManager = user?.role === "manager" || user?.role === "admin";
 
   const addMember = useMutation({
-    mutationFn: async ({ user_id, role }: { user_id: string; role: string }) => {
-      await api.post(`/projects/${id}/members`, { user_id, role });
+    mutationFn: async ({
+      user_id,
+      assigned_role,
+    }: {
+      user_id: number;
+      assigned_role: string;
+    }) => {
+      await api.post(`/projects/${id}/members`, { user_id, assigned_role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members", id] });
@@ -63,7 +86,7 @@ export default function MembersPage({ params }: { params: Promise<{ id: string }
   });
 
   const removeMember = useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async (userId: number) => {
       await api.delete(`/projects/${id}/members/${userId}`);
     },
     onSuccess: () => {
@@ -71,9 +94,11 @@ export default function MembersPage({ params }: { params: Promise<{ id: string }
     },
   });
 
-  const existingUserIds = new Set(members?.map((m) => m.user_id) ?? []);
-  const availableUsers = (allUsers ?? []).filter(
-    (u) => !existingUserIds.has(u.user_id)
+  const existingUserIds = new Set(
+    members?.map((m) => m.user?.user_id) ?? []
+  );
+  const availableUsers = (directoryUsers ?? []).filter(
+    (u) => !existingUserIds.has(String(u.user_id))
   );
 
   async function handleAddMember(e: React.FormEvent) {
@@ -84,7 +109,10 @@ export default function MembersPage({ params }: { params: Promise<{ id: string }
       return;
     }
     try {
-      await addMember.mutateAsync({ user_id: selectedUserId, role: selectedRole });
+      await addMember.mutateAsync({
+        user_id: Number(selectedUserId),
+        assigned_role: selectedRole,
+      });
       setOpen(false);
       setSelectedUserId("");
       setSelectedRole("member");
@@ -122,51 +150,59 @@ export default function MembersPage({ params }: { params: Promise<{ id: string }
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {members.map((member) => (
-            <Card key={member.user_id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                      {member.user
-                        ? `${member.user.first_name[0]}${member.user.last_name[0]}`
-                        : "?"}
-                    </div>
-                    <div>
-                      <CardTitle className="text-sm">
+          {members.map((member) => {
+            const memberId = member.user?.user_id;
+            return (
+              <Card key={member.project_member_id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
                         {member.user
-                          ? `${member.user.first_name} ${member.user.last_name}`
-                          : member.user_id}
-                      </CardTitle>
-                      {member.user && (
-                        <p className="text-xs text-muted-foreground">
-                          {member.user.email}
-                        </p>
+                          ? `${member.user.first_name[0]}${member.user.last_name[0]}`
+                          : "?"}
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm">
+                          {member.user
+                            ? `${member.user.first_name} ${member.user.last_name}`
+                            : "Unknown"}
+                        </CardTitle>
+                        {member.user && (
+                          <p className="text-xs text-muted-foreground">
+                            {member.user.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {member.assigned_role}
+                      </Badge>
+                      {isManager && memberId && memberId !== user?.user_id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => removeMember.mutate(Number(memberId))}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{member.role}</Badge>
-                    {isManager && member.user_id !== user?.user_id && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeMember.mutate(member.user_id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">
-                  Joined {new Date(member.joined_at).toLocaleDateString()}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    Joined{" "}
+                    {member.joined_date
+                      ? new Date(member.joined_date).toLocaleDateString()
+                      : "—"}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -184,7 +220,7 @@ export default function MembersPage({ params }: { params: Promise<{ id: string }
                 </SelectTrigger>
                 <SelectContent>
                   {availableUsers.map((u) => (
-                    <SelectItem key={u.user_id} value={u.user_id}>
+                    <SelectItem key={u.user_id} value={String(u.user_id)}>
                       {u.first_name} {u.last_name} ({u.email})
                     </SelectItem>
                   ))}

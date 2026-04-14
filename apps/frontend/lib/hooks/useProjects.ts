@@ -37,3 +37,29 @@ export function useCreateProject() {
     },
   });
 }
+
+export function useUpdateProject(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Partial<Project>) => {
+      const response = await api.patch<{ project: Project }>(`/projects/${id}`, data);
+      return response.data.project;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", id] });
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/projects/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}

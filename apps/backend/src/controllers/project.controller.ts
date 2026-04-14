@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Prisma, ProjectStatus } from '@prisma/client';
+import { Prisma, ProjectStatus, Role } from '@prisma/client';
 import prisma from '../lib/prisma';
 import {
   assertProjectMember,
@@ -108,7 +108,8 @@ export async function updateProject(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const projectId = Number(req.params.id);
-    const owner = await assertProjectOwner(res, userId, projectId);
+    const isAdmin = req.user!.role === Role.admin;
+    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
     if (!owner) return;
 
     const body = req.body as Record<string, unknown>;
@@ -158,7 +159,8 @@ export async function deleteProject(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const projectId = Number(req.params.id);
-    const owner = await assertProjectOwner(res, userId, projectId);
+    const isAdmin = req.user!.role === Role.admin;
+    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
     if (!owner) return;
 
     await prisma.project.delete({ where: { project_id: projectId } });
@@ -219,7 +221,8 @@ export async function addProjectMember(req: Request, res: Response) {
   try {
     const userId = req.user!.user_id;
     const projectId = Number(req.params.id);
-    const owner = await assertProjectOwner(res, userId, projectId);
+    const isAdmin = req.user!.role === Role.admin;
+    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
     if (!owner) return;
 
     const { user_id: newUserId, assigned_role } = req.body as {
@@ -288,7 +291,8 @@ export async function removeProjectMember(req: Request, res: Response) {
       return res.status(400).json({ error: 'Invalid user id' });
     }
 
-    const owner = await assertProjectOwner(res, userId, projectId);
+    const isAdmin = req.user!.role === Role.admin;
+    const owner = await assertProjectOwner(res, userId, projectId, isAdmin);
     if (!owner) return;
 
     if (removeUserId === owner.created_by) {
